@@ -1,0 +1,13 @@
+{
+  "version": "1.0.0",
+  "agent": "Google Jules",
+  "model": "gemini-3-pro",
+  "executionMode": "async_vm",
+  "rulesFile": ".jules/rules.md",
+  "testCommand": "cd flutter_client && flutter test && cd ../genkit_backend && npm run build",
+  "autoVerifyTests": true,
+  "memoryBounds": {
+    "localHostMaxRamMb": 2048,
+    "cloudRunMemory": "1Gi"
+  }
+}

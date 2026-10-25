@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "projectId": "lean-multimodal-platform",
+  "clientTarget": "macos_web",
+  "memoryFenceMb": 2048,
+  "agentIntegration": {
+    "julesReview": true,
+    "cloudOffloadPipeline": "../cloud_compute",
+    "backendService": "../genkit_backend"
+  }
+}

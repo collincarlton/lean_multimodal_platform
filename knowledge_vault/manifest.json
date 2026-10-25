@@ -1,0 +1,34 @@
+{
+  "version": "1.0.0",
+  "vaultOwner": "Collin Carlton",
+  "storageProvider": "Google One (5 TB Vault) + Google Cloud Storage",
+  "indexedSources": [
+    {
+      "id": "NLM-DOC-001",
+      "type": "NOTEBOOK_LM_RESEARCH",
+      "title": "Edge Latency & Thin Client Optimization on Intel macOS",
+      "uri": "vault://notebooks/edge_latency_optimizations.md",
+      "tokenCount": 18450,
+      "lastSynced": "2026-10-25T05:00:00Z"
+    },
+    {
+      "id": "GCS-ASSET-002",
+      "type": "MULTIMODAL_ASSET_VAULT",
+      "title": "High-Resolution System Architecture Blueprint (Vector PDF)",
+      "uri": "gs://cloud-vault-5tb-prod/blueprints/system_topology_v1.pdf",
+      "mimeType": "application/pdf",
+      "byteSize": 14680064,
+      "lastSynced": "2026-10-25T05:00:00Z"
+    },
+    {
+      "id": "TFLITE-GEMMA-INT4",
+      "type": "QUANTIZED_MODEL_ARTIFACT",
+      "title": "Gemma 2 2B Domain Adapted (LiteRT INT4 Quantized)",
+      "uri": "gs://cloud-vault-5tb-prod/models/gemma_lean_int4.tflite",
+      "localStaging": "assets/models/gemma_lean_int4.tflite",
+      "quantScheme": "dynamic_int4",
+      "maxRamBudgetMb": 512,
+      "offloadPlatform": "Google Colab Pro GPU (L4/A100)"
+    }
+  ]
+}

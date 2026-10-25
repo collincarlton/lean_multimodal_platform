@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MultimodalAnalysisOutput",
+  "description": "Structured JSON schema for Google AI Studio frontier model multimodal reasoning.",
+  "type": "object",
+  "required": [
+    "sessionId",
+    "summary",
+    "sentiment",
+    "entities",
+    "actions",
+    "confidenceScore",
+    "groundingSources"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "description": "Unique session identifier for multi-turn conversational tracing."
+    },
+    "summary": {
+      "type": "string",
+      "description": "High-density synthesis of input text, imagery, audio, or document data."
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": [
+        "POSITIVE",
+        "NEUTRAL",
+        "NEGATIVE",
+        "MIXED"
+      ],
+      "description": "Inferred emotional or operational tone."
+    },
+    "entities": {
+      "type": "array",
+      "description": "Extracted key subjects, technological components, or temporal anchors.",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "category",
+          "confidence"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "PERSON",
+              "ORGANIZATION",
+              "TECHNOLOGY",
+              "METRIC",
+              "TEMPORAL"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    },
+    "actions": {
+      "type": "array",
+      "description": "Deterministic directives recommended for client or cloud execution.",
+      "items": {
+        "type": "object",
+        "required": [
+          "actionType",
+          "target",
+          "parameters"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "actionType": {
+            "type": "string",
+            "enum": [
+              "EXECUTE_TOOL",
+              "DISPATCH_ALERT",
+              "STORE_RECORD",
+              "DELEGATE_CLOUD"
+            ]
+          },
+          "target": {
+            "type": "string"
+          },
+          "parameters": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "confidenceScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Aggregate statistical confidence across multimodal streams."
+    },
+    "groundingSources": {
+      "type": "array",
+      "description": "Attributed references from NotebookLM, Google One vault, or deep research documents.",
+      "items": {
+        "type": "object",
+        "required": [
+          "title",
+          "uri",
+          "relevance"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          },
+          "relevance": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  }
+}

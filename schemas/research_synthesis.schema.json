@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DeepResearchSynthesisOutput",
+  "description": "Structured JSON schema for multi-source knowledge consolidation.",
+  "type": "object",
+  "required": [
+    "topic",
+    "executiveSummary",
+    "keyInsights",
+    "citations",
+    "recommendedNextSteps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "topic": {
+      "type": "string"
+    },
+    "executiveSummary": {
+      "type": "string"
+    },
+    "keyInsights": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "sourceTitle",
+          "uri"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "sourceTitle": {
+            "type": "string"
+          },
+          "uri": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "recommendedNextSteps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

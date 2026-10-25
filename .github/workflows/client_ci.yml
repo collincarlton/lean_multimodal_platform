@@ -1,0 +1,55 @@
+name: Lean Client CI (Offloaded Cloud Build)
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  client_audit_and_build:
+    name: Flutter Analyze, Test & Web Compilation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java Runtime
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Flutter Engine
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.8'
+          channel: 'stable'
+          cache: true
+
+      - name: Install Client Dependencies
+        run: |
+          cd flutter_client
+          flutter pub get
+
+      - name: Static Analysis
+        run: |
+          cd flutter_client
+          flutter analyze --no-fatal-infos
+
+      - name: Execute Smoke Tests
+        run: |
+          cd flutter_client
+          flutter test
+
+      - name: Offload Release Web Build
+        run: |
+          cd flutter_client
+          flutter build web --release --no-tree-shake-icons
+
+      - name: Archive Web Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: flutter-web-bundle
+          path: flutter_client/build/web/
+          retention-days: 7
