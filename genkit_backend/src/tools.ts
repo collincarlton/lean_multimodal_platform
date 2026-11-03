@@ -1,67 +1,62 @@
 import { z } from 'zod';
-import { ai } from './index';
+import { ai } from './ai';
+import { getVaultManifest, resolveVaultFile } from './drive_vault';
 
-export const notebookQueryTool = ai.defineTool(
+export const vaultCatalogTool = ai.defineTool(
   {
-    name: 'notebookQueryTool',
-    description: 'Searches the grounded NotebookLM research vault and knowledge manifest for domain facts and citations.',
+    name: 'vaultCatalogTool',
+    description: 'Lists all available blueprints, schematics, and technical manuals indexed in the Google One 5 TB Vault.',
     inputSchema: z.object({
-      query: z.string().describe('The search query or concept to look up in the knowledge repository'),
-      maxResults: z.number().optional().default(3).describe('Maximum number of knowledge fragments to retrieve'),
+      filterKeyword: z.string().optional(),
     }),
-    outputSchema: z.object({
-      results: z.array(z.object({
-        sourceTitle: z.string(),
-        sourceUri: z.string(),
-        snippet: z.string(),
-        relevanceScore: z.number(),
-      })),
-    }),
+    outputSchema: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        mimeType: z.string(),
+        sizeBytes: z.number(),
+        description: z.string(),
+        driveUrl: z.string(),
+      })
+    ),
   },
-  async (input) => {
-    return {
-      results: [
-        {
-          sourceTitle: 'Deep Research Synthesis: Lean Local Client Architecture',
-          sourceUri: 'vault://research/lean_local_architecture.md',
-          snippet: 'Host hardware is an 8 GB Intel Core i5 iMac running macOS Sequoia. All model execution routes to Google AI Studio frontier models.',
-          relevanceScore: 0.98,
-        },
-        {
-          sourceTitle: 'Multimodal Routing Topology & Latency Bounds',
-          sourceUri: 'vault://research/multimodal_routing_topology.md',
-          snippet: 'Multimodal media streams (audio, image, document) are encoded directly on device and passed upstream to Firebase Genkit Cloud Functions.',
-          relevanceScore: 0.92,
-        },
-      ],
-    };
+  async ({ filterKeyword }) => {
+    const catalog = getVaultManifest();
+    if (!filterKeyword) return catalog;
+    const lower = filterKeyword.toLowerCase();
+    return catalog.filter(
+      (item) =>
+        item.name.toLowerCase().includes(lower) || item.description.toLowerCase().includes(lower)
+    );
   }
 );
 
-export const cloudAssetVaultTool = ai.defineTool(
+export const vaultResolveTool = ai.defineTool(
   {
-    name: 'cloudAssetVaultTool',
-    description: 'Retrieves metadata, download URIs, and structural descriptions of multimedia assets stored in the Google One / Cloud Storage vault.',
+    name: 'vaultResolveTool',
+    description: 'Resolves metadata for a specific Google Drive asset stored in the 5 TB Vault by URL or File ID.',
     inputSchema: z.object({
-      assetId: z.string().describe('Unique identifier or path of the asset in the vault'),
+      driveUrlOrId: z.string(),
     }),
     outputSchema: z.object({
-      assetId: z.string(),
-      fileName: z.string(),
-      mimeType: z.string(),
-      sizeBytes: z.number(),
-      downloadUrl: z.string(),
-      tags: z.array(z.string()),
+      found: z.boolean(),
+      asset: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          mimeType: z.string(),
+          sizeBytes: z.number(),
+          description: z.string(),
+          driveUrl: z.string(),
+        })
+        .nullable(),
     }),
   },
-  async (input) => {
+  async ({ driveUrlOrId }) => {
+    const asset = resolveVaultFile(driveUrlOrId);
     return {
-      assetId: input.assetId,
-      fileName: `asset_${input.assetId}.bin`,
-      mimeType: 'application/octet-stream',
-      sizeBytes: 1048576,
-      downloadUrl: `https://storage.googleapis.com/cloud-vault-5tb-prod/${encodeURIComponent(input.assetId)}`,
-      tags: ['google-one-vault', 'production-asset', 'multimodal'],
+      found: asset !== null,
+      asset,
     };
   }
 );

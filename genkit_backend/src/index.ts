@@ -1,70 +1,138 @@
 import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import * as dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
-import * as path from 'path';
-import * as fs from 'fs';
-
-dotenv.config();
-
-export const ai = genkit({
-  plugins: [googleAI()],
-});
-
+import path from 'path';
+import dotenv from 'dotenv';
+import { getVaultManifest, resolveVaultFile } from './drive_vault';
 import {
-  multimodalAssistantFlow,
-  deepResearchSynthesisFlow,
-} from './flows';
-export {
-  multimodalAssistantFlow,
-  deepResearchSynthesisFlow,
-};
-export { notebookQueryTool, cloudAssetVaultTool } from './tools';
-export * from './schemas';
+  saveSession,
+  listSessions,
+  getSession,
+  deleteSession,
+  clearHistory,
+} from './history_service';
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
+import { ai } from './ai';
+export { ai };
+
+import { executeMultimodalReasoning } from './flows';
+import './tools';
 
 const app = express();
+const PORT = process.env.PORT || 5050;
+const HOST = process.env.HOST || '127.0.0.1';
+
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'HEALTHY', model: 'Gemini 3.8 Flash Frontier Reasoning' });
+const webBuildPath = path.resolve(__dirname, '../../flutter_client/build/web');
+app.use(express.static(webBuildPath));
+
+app.get('/api/health', (_req, res) => {
+  const mem = process.memoryUsage();
+  res.json({
+    status: 'ONLINE',
+    mode: 'ZERO_COST_SOVEREIGN',
+    activeModel: process.env.MODEL_NAME || 'gemini-3-flash-preview',
+    uptimeSeconds: Math.floor(process.uptime()),
+    memoryRssMb: (mem.rss / 1024 / 1024).toFixed(2),
+    heapUsedMb: (mem.heapUsed / 1024 / 1024).toFixed(2),
+    port: PORT,
+  });
 });
 
-app.post('/api/assistant', async (req, res) => {
+// Vault Catalog Endpoints
+app.get('/api/vault/manifest', (_req, res) => {
   try {
-    const result = await multimodalAssistantFlow(req.body);
-    res.status(200).json(result);
-  } catch (error: any) {
-    console.error('Error invoking multimodalAssistantFlow:', error);
-    res.status(500).json({ error: error.message || 'Internal Flow Error' });
+    const catalog = getVaultManifest();
+    res.json({
+      status: 'OK',
+      source: 'Google One (5 TB Vault)',
+      count: catalog.length,
+      assets: catalog,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/research/synthesize', async (req, res) => {
+app.post('/api/vault/resolve', (req, res) => {
+  const { driveUrlOrId } = req.body;
+  if (!driveUrlOrId) {
+    res.status(400).json({ error: 'driveUrlOrId required' });
+    return;
+  }
+  const asset = resolveVaultFile(driveUrlOrId);
+  res.json({ found: asset !== null, asset });
+});
+
+// Session History Endpoints
+app.get('/api/history', (_req, res) => {
   try {
-    const result = await deepResearchSynthesisFlow(req.body);
-    res.status(200).json(result);
-  } catch (error: any) {
-    console.error('Error invoking deepResearchSynthesisFlow:', error);
-    res.status(500).json({ error: error.message || 'Internal Flow Error' });
+    const sessions = listSessions();
+    res.json({ status: 'OK', count: sessions.length, sessions });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 
-const webDistPath = path.resolve(__dirname, '../../flutter_client/build/web');
-if (fs.existsSync(webDistPath)) {
-  app.use(express.static(webDistPath));
-  app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path === '/health') return next();
-    res.sendFile(path.join(webDistPath, 'index.html'));
-  });
-}
+app.get('/api/history/:id', (req, res) => {
+  const detail = getSession(req.params.id);
+  if (!detail) {
+    res.status(404).json({ error: 'Session not found' });
+    return;
+  }
+  res.json(detail);
+});
 
-const PORT = parseInt(process.env.PORT || '5050', 10);
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[GENKIT] Sovereign Unified Platform online on port ${PORT}`);
-  });
-}
+app.delete('/api/history/:id', (req, res) => {
+  const deleted = deleteSession(req.params.id);
+  res.json({ success: deleted });
+});
 
-export default app;
+app.delete('/api/history', (_req, res) => {
+  clearHistory();
+  res.json({ success: true });
+});
+
+// Reasoning API (with Auto-Persistence)
+app.post('/api/reason', async (req, res) => {
+  const start = Date.now();
+  try {
+    const output = await executeMultimodalReasoning(req.body);
+    const latencyMs = Date.now() - start;
+
+    // Automatically persist to zero-overhead local JSON vault
+    const saved = saveSession(req.body, output, latencyMs);
+
+    res.json({
+      ...output,
+      sessionId: saved.id,
+      latencyMs,
+    });
+  } catch (err: any) {
+    console.error('[API REASONING FAULT]', err);
+    res.status(500).json({
+      error: err.message || 'Internal reasoning pipeline exception',
+      timestamp: new Date().toISOString(),
+    });
+  }
+});
+
+app.get('*', (_req, res) => {
+  const indexPath = path.join(webBuildPath, 'index.html');
+  res.sendFile(indexPath, (err) => {
+    if (err) {
+      res.status(404).send('Compiled Flutter Web release bundle not found on host.');
+    }
+  });
+});
+
+app.listen(Number(PORT), HOST, () => {
+  console.log(`[SOVEREIGN GATEWAY] Daemon operational at http://${HOST}:${PORT}`);
+  console.log(`[STATIC ASSETS] Serving bundle from ${webBuildPath}`);
+});

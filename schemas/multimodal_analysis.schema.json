@@ -4,19 +4,20 @@
   "description": "Structured JSON schema for Google AI Studio frontier model multimodal reasoning.",
   "type": "object",
   "required": [
-    "sessionId",
     "summary",
-    "sentiment",
     "entities",
-    "actions",
-    "confidenceScore",
-    "groundingSources"
+    "actionDirectives",
+    "reasoningSteps"
   ],
-  "additionalProperties": false,
+  "additionalProperties": true,
   "properties": {
     "sessionId": {
       "type": "string",
       "description": "Unique session identifier for multi-turn conversational tracing."
+    },
+    "latencyMs": {
+      "type": "integer",
+      "description": "End-to-end execution latency in milliseconds."
     },
     "summary": {
       "type": "string",
@@ -30,7 +31,56 @@
         "NEGATIVE",
         "MIXED"
       ],
+      "default": "NEUTRAL",
       "description": "Inferred emotional or operational tone."
+    },
+    "confidenceScore": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9,
+      "description": "Aggregate statistical confidence across multimodal streams."
+    },
+    "acousticAnalysis": {
+      "type": "object",
+      "properties": {
+        "transcript": {
+          "type": "string"
+        },
+        "audioCharacteristics": {
+          "type": "string"
+        },
+        "detectedAnomalies": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "vaultGrounding": {
+      "type": "object",
+      "properties": {
+        "fileName": {
+          "type": "string"
+        },
+        "driveUrl": {
+          "type": "string"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "sizeBytes": {
+          "type": "number"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "GROUNDED_ZERO_LOCAL_IO",
+            "DIRECT_DRIVE_REF"
+          ]
+        }
+      }
     },
     "entities": {
       "type": "array",
@@ -42,20 +92,12 @@
           "category",
           "confidence"
         ],
-        "additionalProperties": false,
         "properties": {
           "name": {
             "type": "string"
           },
           "category": {
-            "type": "string",
-            "enum": [
-              "PERSON",
-              "ORGANIZATION",
-              "TECHNOLOGY",
-              "METRIC",
-              "TEMPORAL"
-            ]
+            "type": "string"
           },
           "confidence": {
             "type": "number",
@@ -65,67 +107,35 @@
         }
       }
     },
-    "actions": {
+    "actionDirectives": {
       "type": "array",
       "description": "Deterministic directives recommended for client or cloud execution.",
       "items": {
         "type": "object",
         "required": [
-          "actionType",
-          "target",
-          "parameters"
+          "priority",
+          "instruction"
         ],
-        "additionalProperties": false,
         "properties": {
-          "actionType": {
+          "priority": {
             "type": "string",
             "enum": [
-              "EXECUTE_TOOL",
-              "DISPATCH_ALERT",
-              "STORE_RECORD",
-              "DELEGATE_CLOUD"
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
             ]
           },
-          "target": {
+          "instruction": {
             "type": "string"
-          },
-          "parameters": {
-            "type": "object",
-            "additionalProperties": true
           }
         }
       }
     },
-    "confidenceScore": {
-      "type": "number",
-      "minimum": 0,
-      "maximum": 1,
-      "description": "Aggregate statistical confidence across multimodal streams."
-    },
-    "groundingSources": {
+    "reasoningSteps": {
       "type": "array",
-      "description": "Attributed references from NotebookLM, Google One vault, or deep research documents.",
       "items": {
-        "type": "object",
-        "required": [
-          "title",
-          "uri",
-          "relevance"
-        ],
-        "additionalProperties": false,
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "uri": {
-            "type": "string"
-          },
-          "relevance": {
-            "type": "number",
-            "minimum": 0,
-            "maximum": 1
-          }
-        }
+        "type": "string"
       }
     }
   }

@@ -16,6 +16,13 @@ if [ -z "$PROJECT_ID" ]; then
     exit 1
 fi
 
+# FinOps guard: require explicit confirmation before provisioning billed GCP resources
+if [ "${FINOPS_CONFIRMED:-0}" != "1" ]; then
+    echo "[FINOPS GUARD] Cloud Run deployment is gated to prevent unintended cloud billing on project $PROJECT_ID."
+    echo "To authorize cloud provisioning, rerun with FINOPS_CONFIRMED=1: FINOPS_CONFIRMED=1 ./deploy_cloud_run.sh"
+    exit 1
+fi
+
 # Extract GEMINI_API_KEY from genkit_backend/.env if not in shell environment
 if [ -z "${GEMINI_API_KEY:-}" ] && [ -f "./genkit_backend/.env" ]; then
     GEMINI_API_KEY="$(grep '^GEMINI_API_KEY=' ./genkit_backend/.env | cut -d '=' -f2-)"
@@ -48,5 +55,5 @@ echo "[PHASE 4 SUCCESS] Cloud Run deployment complete."
 ENDPOINT="$(gcloud run services describe "$SERVICE_NAME" --region="$REGION" --format="value(status.url)")"
 echo "================================================================================"
 echo "Production Cloud Run Service URL: $ENDPOINT"
-echo "Health check: curl $ENDPOINT/health"
+echo "Health check: curl $ENDPOINT/api/health"
 echo "================================================================================"

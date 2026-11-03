@@ -1,0 +1,56 @@
+[
+  {
+    "id": "vault-cad-001",
+    "name": "Industrial_Turbine_Schematic_Rev4.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 48200000,
+    "description": "High-pressure turbine assembly blueprint with acoustic vibration tolerance tables",
+    "driveFileId": "1gH5iJ6kL7mN8oP9qR0sT1uV2wX3yZ4aB",
+    "driveUrl": "https://drive.google.com/file/d/1gH5iJ6kL7mN8oP9qR0sT1uV2wX3yZ4aB/view"
+  },
+  {
+    "id": "vault-spec-002",
+    "name": "Acoustic_Harmonic_Resonance_Standard_2026.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 12800000,
+    "description": "International ISO standard for industrial transducer harmonic resonance thresholds",
+    "driveFileId": "2bC3dE4fG5hI6jK7lM8nO9pQ0rS1tU2vW",
+    "driveUrl": "https://drive.google.com/file/d/2bC3dE4fG5hI6jK7lM8nO9pQ0rS1tU2vW/view"
+  },
+  {
+    "id": "vault-img-003",
+    "name": "Micro_Crack_Interferometry_4K.png",
+    "mimeType": "image/png",
+    "sizeBytes": 34100000,
+    "description": "4K laser interferometry scan detailing high-stress rotor blade surface fatigue",
+    "driveFileId": "3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX",
+    "driveUrl": "https://drive.google.com/file/d/3cD4eF5gH6iJ7kL8mN9oP0qR1sT2uV3wX/view"
+  },
+  {
+    "id": "NLM-DOC-001",
+    "name": "Edge_Latency_Thin_Client_Intel_macOS.md",
+    "mimeType": "text/markdown",
+    "sizeBytes": 18450,
+    "description": "NotebookLM synthesis: Edge Latency & Thin Client Optimization on Intel macOS",
+    "driveFileId": "NLM-DOC-001",
+    "driveUrl": "vault://notebooks/edge_latency_optimizations.md"
+  },
+  {
+    "id": "GCS-ASSET-002",
+    "name": "System_Topology_Blueprint_v1.pdf",
+    "mimeType": "application/pdf",
+    "sizeBytes": 14680064,
+    "description": "High-Resolution System Architecture Blueprint (Vector PDF)",
+    "driveFileId": "GCS-ASSET-002",
+    "driveUrl": "gs://cloud-vault-5tb-prod/blueprints/system_topology_v1.pdf"
+  },
+  {
+    "id": "TFLITE-GEMMA-INT4",
+    "name": "gemma_lean_int4.tflite",
+    "mimeType": "application/octet-stream",
+    "sizeBytes": 2147483648,
+    "description": "Gemma 2 2B Domain Adapted (LiteRT INT4 Quantized model artifact)",
+    "driveFileId": "TFLITE-GEMMA-INT4",
+    "driveUrl": "gs://cloud-vault-5tb-prod/models/gemma_lean_int4.tflite"
+  }
+]
