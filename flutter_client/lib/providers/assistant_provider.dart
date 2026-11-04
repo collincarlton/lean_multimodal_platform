@@ -17,7 +17,7 @@ class AssistantProvider extends ChangeNotifier {
   double _temperature = 0.2;
 
   AssistantProvider({GenkitApiService? apiService})
-      : _apiService = apiService ?? GenkitApiService() {
+      : _apiService = apiService ?? const GenkitApiService() {
     _sessionId = _uuid.v4();
     verifyBackendHealth();
   }

@@ -40,3 +40,4 @@ flutter_client/build/
 
 # Cloud Offload & Staged Local Anchors
 assets/models/*.tflite
+companion/LeanPortalCompanion
