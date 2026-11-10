@@ -159,8 +159,9 @@ class _MultimodalComposerState extends State<MultimodalComposer> {
 
   void _handleSubmit() {
     final text = _textController.text.trim();
-    if (text.isEmpty && _attachedAudio == null && _attachedVaultUrl == null)
+    if (text.isEmpty && _attachedAudio == null && _attachedVaultUrl == null) {
       return;
+    }
 
     final input = MultimodalInput(
       prompt: text.isNotEmpty
