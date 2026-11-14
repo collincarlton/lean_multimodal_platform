@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../models/multimodal_payload.dart';
 
 class GroundingChip extends StatelessWidget {
-  final GroundingSourceItem source;
+  final VaultGroundingRef source;
 
   const GroundingChip({super.key, required this.source});
 
@@ -25,7 +25,7 @@ class GroundingChip extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  source.title,
+                  source.fileName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -34,7 +34,7 @@ class GroundingChip extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  source.uri,
+                  source.driveUrl,
                   style: const TextStyle(
                     color: Colors.white38,
                     fontSize: 11,
@@ -53,7 +53,7 @@ class GroundingChip extends StatelessWidget {
               borderRadius: BorderRadius.circular(4),
             ),
             child: Text(
-              '${(source.relevance * 100).toInt()}% match',
+              source.status,
               style: const TextStyle(
                 color: Colors.tealAccent,
                 fontSize: 10,

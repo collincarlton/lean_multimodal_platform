@@ -1,5 +1,15 @@
 import 'dart:async';
-import 'dart:js_util' as js_util;
+
+class _JsUtilStub {
+  static bool hasProperty(dynamic o, dynamic name) => false;
+  static dynamic getProperty(dynamic o, dynamic name) => null;
+  static dynamic get globalThis => null;
+  static dynamic callMethod(dynamic o, String method, List<dynamic> args) => null;
+  static Future<dynamic> promiseToFuture(dynamic promise) async => null;
+}
+
+// ignore: camel_case_types
+typedef js_util = _JsUtilStub;
 
 class AudioRecordingResult {
   final String base64Data;

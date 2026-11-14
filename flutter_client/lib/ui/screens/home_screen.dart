@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/multimodal_payload.dart';
+import '../../models/multimodal_payload.dart' hide EntityBadge;
 import '../../providers/assistant_provider.dart';
 import '../widgets/action_card.dart';
 import '../widgets/entity_badge.dart';
@@ -348,14 +348,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: _sentimentColor(output.sentiment).withValues(alpha: 0.15),
+                        color: _sentimentColor(output.sentiment ?? 'NEUTRAL').withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: _sentimentColor(output.sentiment).withValues(alpha: 0.4)),
+                        border: Border.all(color: _sentimentColor(output.sentiment ?? 'NEUTRAL').withValues(alpha: 0.4)),
                       ),
                       child: Text(
-                        output.sentiment,
+                        output.sentiment ?? 'NEUTRAL',
                         style: TextStyle(
-                          color: _sentimentColor(output.sentiment),
+                          color: _sentimentColor(output.sentiment ?? 'NEUTRAL'),
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
                         ),
@@ -363,13 +363,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      'Confidence: ${(output.confidenceScore * 100).toInt()}%',
+                      'Confidence: ${((output.confidenceScore ?? 1.0) * 100).toInt()}%',
                       style: const TextStyle(fontSize: 11, color: Colors.white60, fontFamily: 'monospace'),
                     ),
                     const Spacer(),
-                    Text(
-                      'Session: ${output.sessionId.length >= 8 ? output.sessionId.substring(0, 8) : output.sessionId}...',
-                      style: const TextStyle(fontSize: 11, color: Colors.white38, fontFamily: 'monospace'),
+                    Consumer<AssistantProvider>(
+                      builder: (context, provider, _) => Text(
+                        'Session: ${provider.sessionId.length >= 8 ? provider.sessionId.substring(0, 8) : provider.sessionId}...',
+                        style: const TextStyle(fontSize: 11, color: Colors.white38, fontFamily: 'monospace'),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     IconButton(
@@ -419,26 +421,24 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          if (output.actions.isNotEmpty) ...[
+          if (output.actionDirectives.isNotEmpty) ...[
             const Text(
               'RECOMMENDED ACTION DIRECTIVES',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1),
             ),
             const SizedBox(height: 8),
             Column(
-              children: output.actions.map((a) => ActionCard(action: a)).toList(),
+              children: output.actionDirectives.map((a) => ActionCard(action: a)).toList(),
             ),
             const SizedBox(height: 16),
           ],
-          if (output.groundingSources.isNotEmpty) ...[
+          if (output.vaultGrounding != null) ...[
             const Text(
               'GROUNDING CITATIONS & KNOWLEDGE VAULT',
               style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white54, letterSpacing: 1),
             ),
             const SizedBox(height: 8),
-            Column(
-              children: output.groundingSources.map((g) => GroundingChip(source: g)).toList(),
-            ),
+            GroundingChip(source: output.vaultGrounding!),
           ],
         ],
       ),

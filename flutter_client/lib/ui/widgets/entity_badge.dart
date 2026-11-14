@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/multimodal_payload.dart';
+import '../../models/multimodal_payload.dart' as payload;
 
 class EntityBadge extends StatelessWidget {
-  final EntityItem entity;
+  final payload.EntityBadge entity;
 
   const EntityBadge({super.key, required this.entity});
 

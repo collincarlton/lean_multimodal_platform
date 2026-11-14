@@ -1,17 +1,14 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../../models/multimodal_payload.dart';
 
 class ActionCard extends StatelessWidget {
-  final ActionItem action;
+  final ActionDirective action;
   final VoidCallback? onExecute;
 
   const ActionCard({super.key, required this.action, this.onExecute});
 
   @override
   Widget build(BuildContext context) {
-    final paramStr = const JsonEncoder.withIndent('  ').convert(action.parameters);
-
     return Card(
       color: const Color(0xFF1E222B),
       elevation: 0,
@@ -35,7 +32,7 @@ class ActionCard extends StatelessWidget {
                     border: Border.all(color: Colors.deepPurpleAccent.withValues(alpha: 0.4)),
                   ),
                   child: Text(
-                    action.actionType,
+                    action.priority,
                     style: const TextStyle(
                       color: Colors.deepPurpleAccent,
                       fontSize: 11,
@@ -46,7 +43,7 @@ class ActionCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(
-                    action.target,
+                    action.instruction,
                     style: const TextStyle(
                       color: Colors.white70,
                       fontSize: 12,
@@ -70,25 +67,6 @@ class ActionCard extends StatelessWidget {
                   ),
               ],
             ),
-            if (action.parameters.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(
-                  paramStr,
-                  style: const TextStyle(
-                    fontFamily: 'monospace',
-                    fontSize: 11,
-                    color: Colors.white60,
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ),

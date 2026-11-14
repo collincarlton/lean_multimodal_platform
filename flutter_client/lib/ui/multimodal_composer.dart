@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:js_util' as js_util;
 import 'package:flutter/material.dart';
 import '../models/multimodal_payload.dart';
 import '../services/audio_recorder_service.dart';
@@ -49,25 +48,7 @@ class _MultimodalComposerState extends State<MultimodalComposer> {
   }
 
   void _registerPushToTalkBridge() {
-    js_util.setProperty(
-      js_util.globalThis,
-      'leanStartPushToTalk',
-      js_util.allowInterop(() {
-        if (!_isRecording && !widget.isLoading) {
-          _startRecording();
-        }
-      }),
-    );
-
-    js_util.setProperty(
-      js_util.globalThis,
-      'leanStopPushToTalk',
-      js_util.allowInterop(() {
-        if (_isRecording) {
-          _stopRecording();
-        }
-      }),
-    );
+    // Native macOS desktop push-to-talk is coordinated via LeanPortalCompanion HUD daemon
   }
 
   @override
