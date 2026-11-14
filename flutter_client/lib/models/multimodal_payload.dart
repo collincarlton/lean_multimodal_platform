@@ -241,3 +241,17 @@ class MultimodalOutput {
     'latencyMs': latencyMs,
   };
 }
+
+class MediaAttachment {
+  final String fileName;
+  final String mimeType;
+  final String? base64Data;
+  final int? sizeBytes;
+
+  const MediaAttachment({
+    required this.fileName,
+    required this.mimeType,
+    this.base64Data,
+    this.sizeBytes,
+  });
+}

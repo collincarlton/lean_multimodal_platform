@@ -37,7 +37,12 @@ class AssistantProvider extends ChangeNotifier {
   }
 
   Future<void> verifyBackendHealth() async {
-    _backendHealthy = await _apiService.checkHealth();
+    try {
+      final res = await _apiService.checkHealth();
+      _backendHealthy = (res['status'] == 'ONLINE' || res['status'] == 'OK');
+    } catch (_) {
+      _backendHealthy = false;
+    }
     notifyListeners();
   }
 

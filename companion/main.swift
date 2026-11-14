@@ -457,6 +457,17 @@ class StatusPopoverController: NSObject, NSApplicationDelegate, WKUIDelegate, WK
         case "friction":
             executable = URL(fileURLWithPath: "/usr/bin/python3")
             args = [scoutScriptPath.path, "--detect-friction"]
+        case "multimodal-stream":
+            let gatewayUrl = URL(string: "http://127.0.0.1:5050/api/health")!
+            var req = URLRequest(url: gatewayUrl)
+            req.timeoutInterval = 3.0
+            URLSession.shared.dataTask(with: req) { [weak self] data, response, error in
+                let status = (error == nil && (response as? HTTPURLResponse)?.statusCode == 200) ? "ONLINE" : "OFFLINE"
+                DispatchQueue.main.async {
+                    self?.webView.evaluateJavaScript("if (window.onMultimodalStatus) window.onMultimodalStatus('\(status)');", completionHandler: nil)
+                }
+            }.resume()
+            return
         case "refresh":
             DispatchQueue.main.async { [weak self] in
                 self?.refreshDashboard()

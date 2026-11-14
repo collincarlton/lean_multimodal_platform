@@ -90,4 +90,40 @@ class GenkitApiService {
       throw Exception(errorMessage);
     }
   }
+
+  Future<MultimodalOutput> queryAssistant({
+    required String sessionId,
+    required String prompt,
+    List<MediaAttachment>? media,
+    double temperature = 0.2,
+  }) async {
+    String? imgB64;
+    String? imgMime;
+    String? audB64;
+    String? audMime;
+
+    if (media != null && media.isNotEmpty) {
+      for (final m in media) {
+        if (m.mimeType.startsWith('image/')) {
+          imgB64 = m.base64Data;
+          imgMime = m.mimeType;
+        } else if (m.mimeType.startsWith('audio/')) {
+          audB64 = m.base64Data;
+          audMime = m.mimeType;
+        }
+      }
+    }
+
+    final input = MultimodalInput(
+      prompt: prompt,
+      imageBase64: imgB64,
+      imageMimeType: imgMime,
+      audioBase64: audB64,
+      audioMimeType: audMime,
+    );
+
+    return postReasoning(input);
+  }
+
+  void dispose() {}
 }
