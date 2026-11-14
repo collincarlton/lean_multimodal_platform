@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -31,7 +30,8 @@ class GenkitGatewayClient {
   Future<bool> probeHealth() async {
     final uri = Uri.parse('$baseUrl/healthz');
     try {
-      final response = await _httpClient.get(uri).timeout(const Duration(seconds: 3));
+      final response =
+          await _httpClient.get(uri).timeout(const Duration(seconds: 3));
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -81,9 +81,8 @@ class GenkitGatewayClient {
       return;
     }
 
-    final lineStream = response.stream
-        .transform(utf8.decoder)
-        .transform(const LineSplitter());
+    final lineStream =
+        response.stream.transform(utf8.decoder).transform(const LineSplitter());
 
     await for (final line in lineStream) {
       if (line.isEmpty || line.startsWith(':')) continue;
