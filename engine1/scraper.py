@@ -120,6 +120,7 @@ out body 25;"""
                     "city": metro,
                     "state": "TX",
                     "zip_code": tags.get("addr:postcode", "75001"),
+                    "is_verified": 1,
                 })
     except Exception as e:
         logger.debug(f"Overpass query for {metro} safely skipped/timed out: {e}")
@@ -269,6 +270,7 @@ def scrape_query_playwright(query: str, target_count: int, seen_names: Set[str])
                         "city": city,
                         "state": state,
                         "zip_code": zip_code,
+                        "is_verified": 1,
                     }
                     results.append(record)
                     logger.info(f"[{len(results)}/{target_count}] Scraped: {name} | Phone: {record['phone']} | Rating: {rating}★")
@@ -355,19 +357,21 @@ async def persist_listings(niche_id: int, listings: List[Dict[str, Any]]) -> int
     now = datetime.now(timezone.utc).isoformat()
     try:
         for item in listings:
+            is_verified_val = 1 if item.get("is_verified", 0) else 0
             await conn.execute(
                 """
                 INSERT INTO listings (
                     niche_id, business_name, phone, website, rating,
                     reviews_count, address, city, state, zip_code, is_verified, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(niche_id, business_name, phone) DO UPDATE SET
                     website=excluded.website,
                     rating=excluded.rating,
                     reviews_count=excluded.reviews_count,
                     address=excluded.address,
                     city=excluded.city,
-                    zip_code=excluded.zip_code;
+                    zip_code=excluded.zip_code,
+                    is_verified=excluded.is_verified;
                 """,
                 (
                     niche_id,
@@ -380,6 +384,7 @@ async def persist_listings(niche_id: int, listings: List[Dict[str, Any]]) -> int
                     item["city"],
                     item["state"],
                     item["zip_code"],
+                    is_verified_val,
                     now,
                 ),
             )
@@ -396,6 +401,7 @@ async def harvest_100_listings(
     target_total: int = 100,
     custom_query: Optional[str] = None,
     custom_metros: Optional[str] = None,
+    seed_demo: bool = False,
 ) -> int:
     # 0. Hardware Headroom Gate
     if not check_memory_headroom():
@@ -473,14 +479,14 @@ async def harvest_100_listings(
                     if len(all_listings) >= target_total:
                         break
 
-    # 4. Verified regional seed pool fallback
-    if len(all_listings) < target_total:
-        logger.info(f"Topping up with verified high-fidelity regional seed pool (Current: {len(all_listings)})...")
+    # 4. Optional demo seed pool fallback (unverified unless live-confirmed)
+    if seed_demo and len(all_listings) < target_total:
+        logger.info(f"Topping up with unverified regional seed pool (--seed-demo, Current: {len(all_listings)})...")
         for pro in VERIFIED_DFW_TREE_PROS:
             k = make_key(pro["business_name"], pro.get("phone", ""))
             if k not in seen_keys:
                 seen_keys.add(k)
-                all_listings.append(pro)
+                all_listings.append({**pro, "is_verified": 0, "source": "seed_fallback"})
                 if len(all_listings) >= target_total:
                     break
 
@@ -503,9 +509,10 @@ def main() -> int:
     parser.add_argument("--limit", type=int, default=100, help="Target listing count (default: 100)")
     parser.add_argument("--query", type=str, default=None, help="Custom search query")
     parser.add_argument("--metros", type=str, default=None, help="Comma-separated metros list")
+    parser.add_argument("--seed-demo", action="store_true", help="Allow unverified regional seed fallback if live scrape is short")
     args = parser.parse_args()
 
-    total = asyncio.run(harvest_100_listings(args.limit, args.query, args.metros))
+    total = asyncio.run(harvest_100_listings(args.limit, args.query, args.metros, seed_demo=args.seed_demo))
     print(f"\n[✓] Successfully harvested and persisted {total} listings to {DB_PATH}")
     return 0
 
