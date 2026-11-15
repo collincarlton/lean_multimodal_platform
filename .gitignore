@@ -30,7 +30,9 @@ genkit_backend/backend.err
 flutter_client/build/
 *.lock
 
-# OS & Editor Artifacts
+# SQLite WAL temporary buffers
+*.db-wal
+*.db-shm
 .DS_Store
 **/.DS_Store
 .idea/
