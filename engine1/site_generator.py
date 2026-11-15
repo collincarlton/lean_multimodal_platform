@@ -750,6 +750,15 @@ def build_static_directory(
             counter += 1
         seen_slugs.add(slug)
 
+        clean_schema_raw = r[15]
+        try:
+            schema_dict = json.loads(clean_schema_raw) if clean_schema_raw else {}
+            if isinstance(schema_dict, dict):
+                schema_dict.pop("aggregateRating", None)
+                schema_dict.pop("review", None)
+                clean_schema_raw = json.dumps(schema_dict)
+        except Exception:
+            pass
         item = {
             "id": r[0],
             "business_name": r[1],
@@ -768,7 +777,7 @@ def build_static_directory(
             "badges": r[13],
             "badges_list": badges_list,
             "price_tier": r[14],
-            "schema_org_json": r[15],
+            "schema_org_json": clean_schema_raw,
             "crane_rigging": r[16],
             "isa_certified": r[17],
             "commercial_accounts": r[18],
@@ -859,7 +868,12 @@ def build_static_directory(
     (target_dir / "robots.txt").write_text(robots_content, encoding="utf-8")
     (target_dir / ".nojekyll").write_text("", encoding="utf-8")
 
-    # 7. Mirror to PLATFORM_DIR / docs for GitHub Pages
+    # 7. Mirror to PLATFORM_DIR / docs for GitHub Pages (preserving google*.html verification files)
+    if DOCS_DIR.exists():
+        for verify_file in DOCS_DIR.glob("google*.html"):
+            dest_verify = target_dir / verify_file.name
+            if not dest_verify.exists():
+                shutil.copy2(verify_file, dest_verify)
     shutil.copytree(target_dir, DOCS_DIR, dirs_exist_ok=True)
     logger.info(f"Mirrored modular site to {DOCS_DIR}")
 

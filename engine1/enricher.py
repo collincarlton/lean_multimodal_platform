@@ -131,13 +131,6 @@ def build_deterministic_enrichment(listing: Dict[str, Any], niche_name: str) -> 
                 "closes": "19:00",
             }
         ],
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": str(rating),
-            "reviewCount": str(reviews_count),
-            "bestRating": "5.0",
-            "worstRating": "1.0",
-        },
         "areaServed": [
             {"@type": "City", "name": city},
             {"@type": "AdministrativeArea", "name": "Dallas-Fort Worth Metroplex"},

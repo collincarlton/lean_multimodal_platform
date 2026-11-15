@@ -437,16 +437,20 @@ def compile_directory_site(
         "@type": "BreadcrumbList",
         "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Directory Home", "item": f"{spec.base_url}/"}],
     }
-    agg_ld = {
+    item_list_ld = {
         "@context": "https://schema.org",
-        "@type": "Service",
-        "name": spec.db_name,
-        "areaServed": spec.metro,
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": f"{insights['avg_rating']:.2f}",
-            "ratingCount": str(max(1, insights["total_reviews"])),
-        },
+        "@type": "ItemList",
+        "name": spec.title,
+        "numberOfItems": len(listings),
+        "itemListElement": [
+            {
+                "@type": "ListItem",
+                "position": idx + 1,
+                "name": it["business_name"],
+                "url": f"{spec.base_url}/listings/{slugify(it['business_name'])}.html",
+            }
+            for idx, it in enumerate(listings[:25])
+        ],
     }
 
     # Build index.html fitting strictly < 150 KB
@@ -460,7 +464,7 @@ def compile_directory_site(
             canonical_url=f"{spec.base_url}/",
             robots_meta=root_decision.robots_meta,
             date_modified=date_mod,
-            schemas=[org_ld, bc_ld, agg_ld, faq_ld],
+            schemas=[org_ld, item_list_ld, bc_ld, faq_ld],
         )
         index_html = f"""{head}
 <body>
@@ -536,13 +540,28 @@ def compile_directory_site(
                 {"@type": "ListItem", "position": 2, "name": city, "item": url},
             ],
         }
+        c_item_list = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": f"Best {spec.category} in {city}, {spec.state}",
+            "numberOfItems": len(c_items),
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": idx + 1,
+                    "name": item["business_name"],
+                    "url": f"{spec.base_url}/listings/{slugify(item['business_name'])}.html",
+                }
+                for idx, item in enumerate(c_items[:20])
+            ],
+        }
         c_head = _shared_head(
             title=f"Best {spec.category} in {city}, {spec.state} (2026 Verified)",
             description=f"{len(c_items)} verified {spec.category.lower()} pros serving {city}, {spec.state}. Average {c_ins['avg_rating']:.2f} stars.",
             canonical_url=url,
             robots_meta=dec.robots_meta,
             date_modified=date_mod,
-            schemas=[org_ld, c_bc, faq_ld],
+            schemas=[org_ld, c_item_list, c_bc, faq_ld],
         )
         c_body = f"""{c_head}
 <body>
@@ -566,13 +585,36 @@ def compile_directory_site(
         dec = InfoGainGate.evaluate_collection(f_items, f"filter:{f_slug}")
         f_ins = InfoGainGate.build_local_insights(f_items, spec, f"{facet['label']} in {spec.metro}")
         url = f"{spec.base_url}/filters/{f_slug}.html"
+        f_bc = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{spec.base_url}/"},
+                {"@type": "ListItem", "position": 2, "name": facet["label"], "item": url},
+            ],
+        }
+        f_item_list = {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            "name": f"{facet['label']} — {spec.metro}",
+            "numberOfItems": len(f_items),
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": idx + 1,
+                    "name": item["business_name"],
+                    "url": f"{spec.base_url}/listings/{slugify(item['business_name'])}.html",
+                }
+                for idx, item in enumerate(f_items[:20])
+            ],
+        }
         f_head = _shared_head(
             title=f"{facet['label']} — Verified {spec.metro} Directory",
             description=f"Compare {len(f_items)} {spec.metro} contractors verified for {facet['label']}.",
             canonical_url=url,
             robots_meta=dec.robots_meta,
             date_modified=date_mod,
-            schemas=[org_ld, faq_ld],
+            schemas=[org_ld, f_item_list, f_bc, faq_ld],
         )
         f_body = f"""{f_head}
 <body>
@@ -593,32 +635,37 @@ def compile_directory_site(
         l_slug = slugify(it["business_name"])
         dec = InfoGainGate.evaluate_listing(it)
         url = f"{spec.base_url}/listings/{l_slug}.html"
+        city_name = (it.get("city") or "Dallas").strip()
         lb_ld: Dict[str, Any] = {
             "@context": "https://schema.org",
-            "@type": "LocalBusiness",
+            "@type": "HomeAndConstructionBusiness",
             "name": it["business_name"],
+            "url": url,
             "address": {
                 "@type": "PostalAddress",
                 "streetAddress": it.get("address") or "",
-                "addressLocality": it.get("city") or "Dallas",
+                "addressLocality": city_name,
                 "addressRegion": it.get("state") or "TX",
             },
         }
         if it.get("phone") and str(it["phone"]).strip().upper() != "N/A" and re_sub_digits(str(it["phone"])):
             lb_ld["telephone"] = it["phone"]
-        if (it.get("rating") or 0) > 0 and (it.get("reviews_count") or 0) > 0:
-            lb_ld["aggregateRating"] = {
-                "@type": "AggregateRating",
-                "ratingValue": f"{float(it['rating']):.1f}",
-                "reviewCount": str(int(it["reviews_count"])),
-            }
+        l_bc = {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "Home", "item": f"{spec.base_url}/"},
+                {"@type": "ListItem", "position": 2, "name": city_name, "item": f"{spec.base_url}/cities/{slugify(city_name)}.html"},
+                {"@type": "ListItem", "position": 3, "name": it["business_name"], "item": url},
+            ],
+        }
         l_head = _shared_head(
             title=f"{it['business_name']} — {it.get('city', 'DFW')}, {it.get('state', 'TX')} | Reviews & Capabilities",
             description=it.get("summary") or spec.title,
             canonical_url=url,
             robots_meta=dec.robots_meta,
             date_modified=date_mod,
-            schemas=[lb_ld],
+            schemas=[lb_ld, l_bc],
         )
         tech_notes = ""
         ta = it.get("tech_audit") or {}
@@ -666,6 +713,10 @@ def compile_directory_site(
     if mirror_to_docs:
         DOCS_ROOT.mkdir(parents=True, exist_ok=True)
         assert_safe_device(DOCS_ROOT)
+        for verify_file in DOCS_ROOT.glob("google*.html"):
+            dest_verify = dist_dir / verify_file.name
+            if not dest_verify.exists():
+                shutil.copy2(verify_file, dest_verify)
         for item_path in dist_dir.iterdir():
             dest = DOCS_ROOT / item_path.name
             if item_path.is_dir():

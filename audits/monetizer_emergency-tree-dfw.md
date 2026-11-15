@@ -1,5 +1,5 @@
 # Monetizer & Backlink Pack — DFW Emergency Tree Removal & Crane Arborist Directory
-Generated: 2026-11-15T07:00:55.576092+00:00
+Generated: 2026-11-15T07:11:53.787360+00:00
 
 ## Part 1: Free-Lead-First -> $149/mo Featured Upgrade Outreach
 ### Emergency North Dallas Tree Service (Dallas) — 4.8★ (972 reviews)
@@ -56,11 +56,11 @@ Generated: 2026-11-15T07:00:55.576092+00:00
 ## Part 3: Engine 1 -> Engine 2 Broken-Site Audit Crossover Targets
 - **Five Star Tree Service** (Fort Worth) | Pain `87.0` | ICP `83.4` | Status `DOC_LIVE_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), Missing mobile viewport tag (broken smartphone layout)
 - **Treehugger Tree Service** (Arlington) | Pain `83.0` | ICP `96.6` | Status `DOC_LIVE_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), No clickable tel: emergency call link
-- **Tactical Tree Operations** (Dallas) | Pain `80.0` | ICP `96.0` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), No clickable tel: emergency call link
+- **Tactical Tree Operations** (Dallas) | Pain `80.0` | ICP `96.0` | Status `DOC_LIVE_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), No clickable tel: emergency call link
 - **Tree Shepherds** (Irving) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (HTTPError)
 - **ArborTech Tree Service** (Irving) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (HTTPError)
 - **NEON Monkey Tree Services** (Fort Worth) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (HTTPError)
 - **Burris Tree Service** (Irving) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (TimeoutError)
 - **Garcia Tree Experts** (Denton) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (HTTPError)
-- **Erik's Tree & Lawn Care Services** (Plano) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (TimeoutError)
-- **Angel Tree Service** (Garland) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (TimeoutError)
+- **Erik's Tree & Lawn Care Services** (Plano) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (TimeoutError)
+- **Angel Tree Service** (Garland) | Pain `74.0` | ICP `94.8` | Status `DOC_LIVE_READY` | Bottlenecks: Website timeout/error within 3s barrier (TimeoutError)
