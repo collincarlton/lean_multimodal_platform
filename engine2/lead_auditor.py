@@ -105,7 +105,12 @@ def get_cached_script(cache_key: str) -> Optional[str]:
     if not ENGINE1_DB_PATH.exists():
         return None
     try:
-        conn = sqlite3.connect(str(ENGINE1_DB_PATH))
+        conn = sqlite3.connect(str(ENGINE1_DB_PATH), timeout=15.0)
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+        conn.execute("PRAGMA cache_size=-32000;")
+        conn.execute("PRAGMA busy_timeout=10000;")
+        conn.execute("PRAGMA temp_store=MEMORY;")
         c = conn.cursor()
         c.execute("SELECT response_text FROM genai_cache WHERE prompt_hash = ?", (cache_key,))
         row = c.fetchone()
@@ -121,8 +126,12 @@ def save_cached_script(cache_key: str, model_id: str, prompt: str, text: str):
     if not ENGINE1_DB_PATH.exists():
         return
     try:
-        conn = sqlite3.connect(str(ENGINE1_DB_PATH))
+        conn = sqlite3.connect(str(ENGINE1_DB_PATH), timeout=15.0)
         conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+        conn.execute("PRAGMA cache_size=-32000;")
+        conn.execute("PRAGMA busy_timeout=10000;")
+        conn.execute("PRAGMA temp_store=MEMORY;")
         conn.execute("""
             CREATE TABLE IF NOT EXISTS genai_cache (
                 prompt_hash TEXT PRIMARY KEY,
@@ -140,6 +149,36 @@ def save_cached_script(cache_key: str, model_id: str, prompt: str, text: str):
         conn.close()
     except Exception:
         pass
+
+
+def compute_icp_score(audit_data: Dict[str, Any], reviews_count: int = 0) -> float:
+    """Score $10M-$50M Mid-Market ICP fit (0-100) from intake friction, mobile failure & review volume."""
+    pain = max(0, 100 - int(audit_data.get("speed_to_lead_score", 70)))
+    volume_bonus = min(30.0, reviews_count * 0.25)
+    pdf_bonus = 15.0 if audit_data.get("pdf_trap") else 0.0
+    mobile_bonus = 12.0 if not audit_data.get("mobile_responsive", True) else 0.0
+    return round(min(99.0, 38.0 + (pain * 0.45) + volume_bonus + pdf_bonus + mobile_bonus), 1)
+
+
+def generate_ask_for_advice_dm(company: str, audit_data: Dict[str, Any]) -> str:
+    """Certified AI Partners 'Ask for Advice' CEO LinkedIn/Phone script + Pre-Call Survey hook."""
+    issue_hint = (audit_data.get("issues") or ["manual intake/estimate turnaround"])[0]
+    return (
+        f"Hi {{CEO_First_Name}}, quick question for your advice as someone running ops at {company} — "
+        f"I'm studying where $10M–$50M commercial contractors lose bids between initial intake and dispatch "
+        f"(for example on sites showing {issue_hint.lower()}). Not pitching anything — if you had 5 minutes "
+        f"to sanity-check our 3-question Pre-Call Employee Survey before we share our 3-redacted-file benchmark, "
+        f"would love your perspective."
+    )
+
+
+def generate_pre_call_employee_survey(company: str) -> List[Dict[str, str]]:
+    """5-minute Pre-Call Employee Survey for Paid AI Assessment ($1,000 credited to Month 1)."""
+    return [
+        {"q": f"At {company}, how many minutes are spent daily copying PDF/email quotes into estimating or dispatch?", "metric": "hours_wasted_weekly"},
+        {"q": "Which step causes the longest delay between customer call and written quote sent?", "metric": "bottleneck_stage"},
+        {"q": "Which 3 redacted historical job files best represent messy estimating inputs?", "metric": "redacted_sample_files"},
+    ]
 
 
 def generate_outreach_script(company: str, audit_data: Dict[str, Any]) -> str:
@@ -172,14 +211,19 @@ Tone: Direct, technical, highly authoritative, zero fluff."""
             from google import genai
             from google.genai import types
 
-            client = genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=12000))
-            resp = client.models.generate_content(
-                model="gemini-3.8-flash",
-                contents=prompt,
-            )
-            text = resp.text.strip()
-            save_cached_script(cache_key, "gemini-3.8-flash", prompt, text)
-            return text
+            client = genai.Client(api_key=api_key, http_options={"timeout": 15000})
+            for model_id in ("gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"):
+                try:
+                    resp = client.models.generate_content(
+                        model=model_id,
+                        contents=prompt,
+                    )
+                    text = resp.text.strip()
+                    save_cached_script(cache_key, model_id, prompt, text)
+                    return text
+                except Exception:
+                    continue
+            raise RuntimeError("All candidate Gemini models exhausted")
         except Exception as e:
             logger.warning(f"Gemini API call failed ({e}), using deterministic synthesis fallback")
 
@@ -365,8 +409,11 @@ async def audit_single_prospect(browser, company: str, url: str) -> Dict[str, An
         if context:
             await context.close()
 
-    # Generate outreach script
+    # Generate outreach scripts, ICP score, and Pre-Call Employee Survey
+    result["icp_score"] = compute_icp_score(result)
     result["outreach_script"] = generate_outreach_script(company, result)
+    result["ask_for_advice_dm"] = generate_ask_for_advice_dm(company, result)
+    result["pre_call_employee_survey"] = generate_pre_call_employee_survey(company)
 
     # Actuate via workspace_actuation if available
     if workspace_actuation:

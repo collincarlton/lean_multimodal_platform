@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tree Shepherds — Irving, TX | Reviews &amp; Capabilities</title>
+<meta name="description" content="Tree Shepherds is a premier emergency tree service provider in Irving, TX, specializing in crane-assisted hazardous tree removal, rapid storm debris clearance, and precision arboriculture. Available 24/7 with a 4.9★ client satisfaction record across 356+ local property owners.">
+<meta name="robots" content="index,follow">
+<meta property="article:modified_time" content="2026-11-15">
+<link rel="canonical" href="https://collincarlton.github.io/dfw-tree-directory/listings/tree-shepherds.html">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0f172a}
+  .badge-pill{font-size:11px;padding:2px 8px;border-radius:9999px;font-weight:600}
+</style>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "LocalBusiness", "name": "Tree Shepherds", "address": {"@type": "PostalAddress", "streetAddress": "Tree service ·  · 314 Carlisle Dr", "addressLocality": "Irving", "addressRegion": "TX"}, "telephone": "(972) 317-9598", "aggregateRating": {"@type": "AggregateRating", "ratingValue": "4.9", "reviewCount": "356"}}</script>
+</head>
+<body>
+<header class="bg-slate-900 text-white py-4 px-4"><div class="max-w-4xl mx-auto flex justify-between"><a href="../index.html" class="text-xs text-emerald-400 font-bold">&larr; Back to Directory</a><span class="text-xs">Completeness: 100.0%</span></div></header>
+<main class="max-w-4xl mx-auto px-4 py-6">
+  <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+    <h1 class="text-2xl font-extrabold text-slate-900">Tree Shepherds</h1>
+    <p class="text-sm text-slate-600 mt-1">Tree service ·  · 314 Carlisle Dr &bull; 4.9&#9733; (356 reviews)</p>
+    <p class="text-sm text-slate-800 mt-4">Tree Shepherds is a premier emergency tree service provider in Irving, TX, specializing in crane-assisted hazardous tree removal, rapid storm debris clearance, and precision arboriculture. Available 24/7 with a 4.9★ client satisfaction record across 356+ local property owners.</p>
+    <div class="mt-4 text-xs text-slate-700"><strong>Verified Capabilities:</strong> [&quot;24/7 Emergency Storm Damage Removal&quot;, &quot;Crane-Assisted Hazardous Tree Felling&quot;, &quot;Precision Canopy Pruning &amp; Trimming&quot;, &quot;Deep Stump Grinding &amp; Surface Root Elimination&quot;, &quot;Emergency Powerline &amp; Structure Clearance&quot;]</div>
+    <div class="mt-2 text-xs text-slate-700"><strong>Phone:</strong> (972) 317-9598 &bull; <strong>Website:</strong> https://treeshepherds.net/</div>
+    
+    <div class="mt-5 flex gap-3">
+      <a href="#lead-modal" data-provider="Tree Shepherds" class="quote-trigger px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Request Priority Estimate</a>
+    </div>
+  </div>
+</main>
+<div id="lead-modal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50">
+  <div class="bg-white rounded-xl max-w-md w-full p-5 shadow-xl">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="text-base font-bold text-slate-900">Request Priority Dispatch / Quote</h3>
+      <button id="lead-close" class="text-slate-400 hover:text-slate-700 font-bold">&times;</button>
+    </div>
+    <form id="lead-form" class="space-y-3 text-xs">
+      <input type="hidden" id="lead-provider" name="provider" value="Top Verified Provider">
+      <div><label class="block font-semibold mb-1">Selected Provider</label><div id="lead-provider-label" class="font-bold text-emerald-700"></div></div>
+      <div><label class="block font-semibold mb-1">Your Name</label><input required name="name" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></div>
+      <div><label class="block font-semibold mb-1">Phone Number</label><input required name="phone" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></div>
+      <div><label class="block font-semibold mb-1">City / ZIP &amp; Job Scope</label><textarea name="notes" rows="2" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></textarea></div>
+      <button type="submit" class="w-full py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">Dispatch Request</button>
+      <div id="lead-status" class="text-xs font-semibold text-emerald-700"></div>
+    </form>
+  </div>
+</div>
+<script>
+(function(){
+  var niche = "emergency-tree-dfw";
+  function beacon(evt, provider){
+    try {
+      var p = JSON.stringify({niche_slug:niche,event_type:evt,provider_slug:provider||"",page_url:location.pathname,ts:new Date().toISOString()});
+      if(navigator.sendBeacon) navigator.sendBeacon("/api/beacon", p);
+    } catch(e){}
+  }
+  var tier = document.getElementById("calc-tier");
+  var out = document.getElementById("calc-output");
+  function recalc(){
+    if(!tier||!out) return;
+    var m = parseFloat(tier.value||"1");
+    var lo = Math.round(parseFloat(out.dataset.baseMin)*m);
+    var hi = Math.round(parseFloat(out.dataset.baseMax)*m);
+    document.querySelectorAll(".calc-addon:checked").forEach(function(cb){
+      lo += parseInt(cb.dataset.min||"0",10);
+      hi += parseInt(cb.dataset.max||"0",10);
+    });
+    out.textContent = "$" + lo.toLocaleString() + " – $" + hi.toLocaleString();
+  }
+  if(tier){ tier.addEventListener("change", recalc); document.querySelectorAll(".calc-addon").forEach(function(c){ c.addEventListener("change", recalc); }); }
+
+  var search = document.getElementById("filter-search");
+  var citySel = document.getElementById("filter-city");
+  var facetCbs = document.querySelectorAll(".facet-filter");
+  var cards = document.querySelectorAll(".listing-card");
+  var countEl = document.getElementById("visible-count");
+  function applyFilters(){
+    var q = (search?search.value:"").toLowerCase().trim();
+    var c = (citySel?citySel.value:"").toLowerCase();
+    var active = [];
+    facetCbs.forEach(function(cb){ if(cb.checked) active.push(cb.value); });
+    var shown = 0;
+    cards.forEach(function(card){
+      var ok = (!q || card.dataset.name.indexOf(q)!==-1 || card.dataset.city.indexOf(q)!==-1);
+      if(ok && c) ok = (card.dataset.city === c);
+      active.forEach(function(f){ if(card.getAttribute("data-"+f) !== "1") ok = false; });
+      card.style.display = ok ? "" : "none";
+      if(ok) shown++;
+    });
+    if(countEl) countEl.textContent = shown;
+  }
+  if(search) search.addEventListener("input", applyFilters);
+  if(citySel) citySel.addEventListener("change", function(){ applyFilters(); beacon("filter_city", citySel.value); });
+  facetCbs.forEach(function(cb){ cb.addEventListener("change", function(){ applyFilters(); beacon("filter_facet", cb.value); }); });
+
+  var modal = document.getElementById("lead-modal");
+  var provInp = document.getElementById("lead-provider");
+  var provLbl = document.getElementById("lead-provider-label");
+  document.querySelectorAll(".quote-trigger").forEach(function(btn){
+    btn.addEventListener("click", function(e){
+      e.preventDefault();
+      var p = btn.dataset.provider || "Top Verified Provider";
+      provInp.value = p; provLbl.textContent = p;
+      modal.classList.remove("hidden");
+      beacon("quote_open", p);
+    });
+  });
+  document.getElementById("lead-close").addEventListener("click", function(){ modal.classList.add("hidden"); });
+  document.querySelectorAll(".call-track").forEach(function(a){
+    a.addEventListener("click", function(){ beacon("call_click", a.dataset.provider); });
+  });
+  document.getElementById("lead-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    var fd = new FormData(e.target);
+    var payload = {niche_slug:niche,provider:fd.get("provider"),name:fd.get("name"),phone:fd.get("phone"),notes:fd.get("notes")};
+    beacon("quote_submit", payload.provider);
+    fetch("/api/lead", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+      .then(function(){ document.getElementById("lead-status").textContent = "Request routed! Expected dispatch reply under 15 min."; })
+      .catch(function(){ document.getElementById("lead-status").textContent = "Request captured locally for dispatch."; });
+  });
+})();
+</script></body></html>

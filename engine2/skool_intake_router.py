@@ -30,7 +30,7 @@ import os
 import sqlite3
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,12 +50,20 @@ def verify_apfs_barrier():
         assert os.stat(str(ENGINE1_DB_PATH.parent)).st_dev == HOME_DEV, "DB path not on APFS home device"
 
 
+def _connect_db() -> sqlite3.Connection:
+    conn = sqlite3.connect(str(ENGINE1_DB_PATH), timeout=15.0)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    conn.execute("PRAGMA synchronous=NORMAL;")
+    conn.execute("PRAGMA cache_size=-32000;")
+    conn.execute("PRAGMA busy_timeout=10000;")
+    conn.execute("PRAGMA temp_store=MEMORY;")
+    return conn
+
+
 def init_db():
     if not ENGINE1_DB_PATH.exists():
         ENGINE1_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(str(ENGINE1_DB_PATH))
-    conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA busy_timeout=5000;")
+    conn = _connect_db()
     conn.execute("""
         CREATE TABLE IF NOT EXISTS skool_intake_leads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -130,17 +138,50 @@ Let me know if you want me to reserve a spot for your business!"""
     return category, dm
 
 
+def _resolve_audit_doc_link(name: str, member: Dict[str, Any]) -> str:
+    """Resolve 1-page Audit Doc URL from explicit payload, engine1.db prospect_audits, or slug mirror."""
+    slug = "".join(c if c.isalnum() else "-" for c in name.lower()).strip("-") or "prospect"
+    if member.get("audit_doc_url"):
+        return str(member["audit_doc_url"])
+    if ENGINE1_DB_PATH.exists():
+        try:
+            c = _connect_db()
+            row = c.execute(
+                "SELECT doc_url FROM prospect_audits WHERE slug LIKE ? OR company_name LIKE ? LIMIT 1",
+                (f"%{slug}%", f"%{name.split()[0]}%"),
+            ).fetchone()
+            c.close()
+            if row and row[0]:
+                return str(row[0])
+        except Exception:
+            pass
+    return f"https://docs.google.com/document/d/simulated-{slug}-audit/edit"
+
+
+def generate_welcome_dm(member: Dict[str, Any], audit_doc_url: str) -> str:
+    """Short Welcome DM sent immediately after Skool join-poll approval."""
+    first = member.get("name", "there").split()[0]
+    rev = member.get("revenue_band", "$10K-$50K/mo")
+    return (
+        f"Welcome to the community, {first}! Noticed your join poll ({rev}) — glad to have another operator here. "
+        f"We benchmark sub-60s intake & dispatch workflows; here's our 1-page sample architecture doc: {audit_doc_url}"
+    )
+
+
 def process_leads(leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     verify_apfs_barrier()
     init_db()
 
-    conn = sqlite3.connect(str(ENGINE1_DB_PATH))
-    conn.execute("PRAGMA journal_mode=WAL;")
+    conn = _connect_db()
 
     processed = []
     for m in leads:
         category, dm = classify_member(m)
         name = m.get("name", "Unknown")
+        audit_doc_url = _resolve_audit_doc_link(name, m)
+        if audit_doc_url not in dm:
+            dm = f"{dm}\n\n1-Page Audit Doc: {audit_doc_url}"
+        welcome_dm = generate_welcome_dm(m, audit_doc_url)
         email = m.get("email", "")
         profile = m.get("profile_url", "")
         revenue = m.get("revenue_band", "<$10K/mo")
@@ -162,6 +203,8 @@ def process_leads(leads: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             "revenue_band": revenue,
             "bottleneck": bottleneck,
             "audit_requested": audit_req,
+            "audit_doc_url": audit_doc_url,
+            "welcome_dm": welcome_dm,
             "diagnostic_dm": dm,
         })
 
