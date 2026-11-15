@@ -196,7 +196,7 @@ Key Audit Findings:
 
 Structure:
 1. Specific observation of their current intake friction (no generic praise).
-2. Contrast with our 3-Step Sovereign FastMCP + Gemini 3.8 Flash architecture (<4s multimodal voice/blueprint intake, 60s SMS dispatch).
+2. Contrast with our 3-Step Sovereign FastMCP + Gemini 3.8 Flash architecture: Live in 48 Hours (mobile intake + instant email/push/webhook owner alerts + calendar booking), plus Day 1 Twilio A2P 10DLC EIN registration (10-15 business day US carrier review for compliant SMS).
 3. Offer our $1,000 Paid Diagnostic Assessment (100% credited to first retainer) to fix this week.
 Tone: Direct, technical, highly authoritative, zero fluff."""
 
@@ -239,6 +239,8 @@ Two critical friction points stood out:
 2. {issues[0] if issues else 'Manual intake forms introduce an unnecessary 24-48 hour quote lag'}.
 
 We deploy Sovereign FastMCP + Gemini 3.8 Flash pipelines that replace manual friction with instant <4s voice/blueprint intake and sub-60-second automated dispatch sync.
+
+We deploy instant owner email/push/webhook dispatch and calendar booking in 48 hours (and submit your Twilio A2P 10DLC Brand + Campaign filing Day 1 for the 10-15 business day US carrier review so compliant SMS runs cleanly under your EIN).
 
 We conduct a comprehensive 48-hour diagnostic audit for $1,000 (100% credited toward monthly retainer if we deploy). 
 

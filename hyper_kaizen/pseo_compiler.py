@@ -184,12 +184,67 @@ def _render_faq_section(spec: NicheSpec, insights: Dict[str, Any]) -> str:
 </section>"""
 
 
-def _render_lead_modal_and_js(niche_slug: str) -> str:
+def _render_footer(title: str, date_mod: str, rel_prefix: str = "") -> str:
+    return (
+        f'<footer class="max-w-7xl mx-auto px-4 py-6 text-xs text-slate-500 border-t border-slate-200 mt-6 '
+        f'flex flex-wrap items-center justify-between gap-2">'
+        f'<span>&copy; 2026 {_esc(title)} &bull; Zero-Fake-Data Verified</span>'
+        f'<div class="flex items-center gap-3">'
+        f'<a href="{rel_prefix}privacy.html" class="hover:text-emerald-700 underline">Privacy Policy</a>'
+        f'<span>&bull;</span>'
+        f'<a href="{rel_prefix}terms.html" class="hover:text-emerald-700 underline">Terms of Service</a>'
+        f'<span>&bull;</span>'
+        f'<span>Updated {date_mod}</span>'
+        f'</div></footer>'
+    )
+
+
+def build_legal_pages(title: str, metro: str, base_url: str, date_mod: str) -> Dict[str, str]:
+    """Generate TCPA / Texas SB 140 / Twilio A2P 10DLC compliant Privacy Policy and Terms HTML."""
+    head_css = (
+        '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">'
+        '<meta name="viewport" content="width=device-width,initial-scale=1">'
+        '<script src="https://cdn.tailwindcss.com"></script></head>'
+        '<body class="bg-slate-50 text-slate-900">'
+        '<header class="bg-slate-900 text-white py-4 px-4"><div class="max-w-4xl mx-auto flex justify-between items-center">'
+        '<a href="index.html" class="text-xs text-emerald-400 font-bold">&larr; Directory Home</a>'
+        f'<span class="text-xs text-slate-300">{_esc(title)}</span></div></header>'
+        '<main class="max-w-4xl mx-auto px-4 py-8"><article class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm space-y-4 text-sm text-slate-700">'
+    )
+    tail = f'</article></main>{_render_footer(title, date_mod, "")}</body></html>'
+    privacy_html = (
+        head_css.replace("<head>", f"<head><title>Privacy Policy &amp; SMS Opt-In — {_esc(title)}</title><link rel=\"canonical\" href=\"{_esc(base_url)}/privacy.html\">")
+        + f'<h1 class="text-2xl font-extrabold text-slate-900">Privacy Policy &amp; SMS Consent Notice</h1>'
+        + f'<p class="text-xs text-slate-500">Effective Date: {date_mod} &bull; { _esc(metro) }</p>'
+        + '<h2 class="text-base font-bold text-slate-900">1. How Quote Requests Are Shared</h2>'
+        + f'<p>When you submit a service quote or priority dispatch request on {_esc(title)}, your contact details and project notes are routed strictly to <strong>up to 3 verified local specialists in your selected city</strong>. We do not sell, rent, or syndicate your phone number or email address to unrelated bulk lead brokers or telemarketing lists.</p>'
+        + '<h2 class="text-base font-bold text-slate-900">2. TCPA, Texas SB 140 &amp; A2P 10DLC SMS Policy</h2>'
+        + '<p>SMS/text alerts or callback confirmations occur only after you submit an explicit, unchecked opt-in consent box. Message frequency varies per active service request. Message and data rates may apply. Reply <strong>STOP</strong> at any time to opt out immediately, or reply <strong>HELP</strong> for support. Consent is not a condition of purchase.</p>'
+        + '<h2 class="text-base font-bold text-slate-900">3. Data Retention &amp; Contact</h2>'
+        + '<p>You may request removal of any inquiry record at any time by emailing <a class="text-emerald-700 underline" href="mailto:interchangecontainer@gmail.com">interchangecontainer@gmail.com</a>.</p>'
+        + tail
+    )
+    terms_html = (
+        head_css.replace("<head>", f"<head><title>Terms of Service — {_esc(title)}</title><link rel=\"canonical\" href=\"{_esc(base_url)}/terms.html\">")
+        + f'<h1 class="text-2xl font-extrabold text-slate-900">Terms of Service &amp; Directory Disclosures</h1>'
+        + f'<p class="text-xs text-slate-500">Effective Date: {date_mod} &bull; {_esc(title)}</p>'
+        + '<h2 class="text-base font-bold text-slate-900">1. Referral Matching Service</h2>'
+        + f'<p>{_esc(title)} provides public technical readiness data and connects property owners in {_esc(metro)} with independent licensed contractors. Submitting a request authorizes sharing your inquiry with up to 3 matched providers in your selected city.</p>'
+        + '<h2 class="text-base font-bold text-slate-900">2. Independent Contractors &amp; Verification</h2>'
+        + '<p>Each listed operator is an independent contractor responsible for licensing, insurance, written estimates, and job execution. Always confirm active general liability, workers\' compensation, and permit scope before authorizing work.</p>'
+        + '<h2 class="text-base font-bold text-slate-900">3. SMS Opt-Out &amp; Questions</h2>'
+        + '<p>To stop SMS updates reply <strong>STOP</strong>. For removal requests or listing corrections contact <a class="text-emerald-700 underline" href="mailto:interchangecontainer@gmail.com">interchangecontainer@gmail.com</a>.</p>'
+        + tail
+    )
+    return {"privacy.html": privacy_html, "terms.html": terms_html}
+
+
+def _render_lead_modal_and_js(niche_slug: str, rel_prefix: str = "") -> str:
     return f"""
 <div id="lead-modal" class="hidden fixed inset-0 bg-slate-900/60 flex items-center justify-center p-4 z-50">
   <div class="bg-white rounded-xl max-w-md w-full p-5 shadow-xl">
     <div class="flex items-center justify-between mb-3">
-      <h3 class="text-base font-bold text-slate-900">Request Priority Dispatch / Quote</h3>
+      <h3 class="text-base font-bold text-slate-900">Get 3 Local Quotes — Request Priority Dispatch</h3>
       <button id="lead-close" class="text-slate-400 hover:text-slate-700 font-bold">&times;</button>
     </div>
     <form id="lead-form" class="space-y-3 text-xs">
@@ -198,6 +253,10 @@ def _render_lead_modal_and_js(niche_slug: str) -> str:
       <div><label class="block font-semibold mb-1">Your Name</label><input required name="name" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></div>
       <div><label class="block font-semibold mb-1">Phone Number</label><input required name="phone" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></div>
       <div><label class="block font-semibold mb-1">City / ZIP &amp; Job Scope</label><textarea name="notes" rows="2" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5"></textarea></div>
+      <label class="flex items-start gap-2 text-[11px] leading-snug text-slate-600 cursor-pointer">
+        <input id="lead-consent" name="consent" type="checkbox" required class="mt-0.5 accent-emerald-600">
+        <span>I agree to the <a href="{rel_prefix}privacy.html" target="_blank" class="text-emerald-700 underline">Privacy Policy</a> and <a href="{rel_prefix}terms.html" target="_blank" class="text-emerald-700 underline">Terms</a>, and consent to be contacted by up to 3 verified local specialists in my selected city via phone, email, or SMS (standard rates may apply). Reply STOP to opt out.</span>
+      </label>
       <button type="submit" class="w-full py-2 rounded-lg bg-emerald-600 text-white font-bold hover:bg-emerald-700">Dispatch Request</button>
       <div id="lead-status" class="text-xs font-semibold text-emerald-700"></div>
     </form>
@@ -508,11 +567,8 @@ def compile_directory_site(
     {_render_faq_section(spec, insights)}
   </div>
 </main>
-<footer class="max-w-7xl mx-auto px-4 py-6 text-xs text-slate-500 border-t border-slate-200 mt-6 flex flex-wrap justify-between gap-2">
-  <span>&copy; 2026 {_esc(spec.title)} &bull; Zero-Fake-Data Verified</span>
-  <span>Updated {date_mod}</span>
-</footer>
-{_render_lead_modal_and_js(spec.niche_slug)}
+{_render_footer(spec.title, date_mod, "")}
+{_render_lead_modal_and_js(spec.niche_slug, "")}
 </body></html>"""
         if len(index_html.encode("utf-8")) < MAX_INDEX_BYTES:
             break
@@ -572,7 +628,7 @@ def compile_directory_site(
   {_render_comparison_matrix(c_items, spec, rel_prefix="../")}
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">{_render_cards_html(c_items, spec, rel_prefix="../", max_cards=40)}</div>
   {_render_faq_section(spec, c_ins)}
-</main>{_render_lead_modal_and_js(spec.niche_slug)}</body></html>"""
+</main>{_render_footer(spec.title, date_mod, "../")}{_render_lead_modal_and_js(spec.niche_slug, "../")}</body></html>"""
         (dist_dir / "cities" / f"{c_slug}.html").write_text(c_body, encoding="utf-8")
         gated_pages.append({"url": url, "indexable": dec.indexable, "reason": dec.reason})
         if dec.indexable:
@@ -624,7 +680,7 @@ def compile_directory_site(
   <p class="text-sm text-slate-600 mb-4">{len(f_items)} matched specialists &bull; {f_ins["avg_rating"]:.2f}&#9733; average customer rating.</p>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">{_render_cards_html(f_items, spec, rel_prefix="../", max_cards=50)}</div>
   {_render_faq_section(spec, f_ins)}
-</main>{_render_lead_modal_and_js(spec.niche_slug)}</body></html>"""
+</main>{_render_footer(spec.title, date_mod, "../")}{_render_lead_modal_and_js(spec.niche_slug, "../")}</body></html>"""
         (dist_dir / "filters" / f"{f_slug}.html").write_text(f_body, encoding="utf-8")
         gated_pages.append({"url": url, "indexable": dec.indexable, "reason": dec.reason})
         if dec.indexable:
@@ -686,11 +742,16 @@ def compile_directory_site(
       <a href="#lead-modal" data-provider="{_esc(it["business_name"])}" class="quote-trigger px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold">Request Priority Estimate</a>
     </div>
   </div>
-</main>{_render_lead_modal_and_js(spec.niche_slug)}</body></html>"""
+</main>{_render_footer(spec.title, date_mod, "../")}{_render_lead_modal_and_js(spec.niche_slug, "../")}</body></html>"""
         (dist_dir / "listings" / f"{l_slug}.html").write_text(l_body, encoding="utf-8")
         gated_pages.append({"url": url, "indexable": dec.indexable, "reason": dec.reason})
         if dec.indexable:
             sitemap_urls.append(url)
+
+    # Legal / TCPA / A2P 10DLC pages (privacy.html & terms.html)
+    for legal_name, legal_html in build_legal_pages(spec.title, spec.metro, spec.base_url, date_mod).items():
+        (dist_dir / legal_name).write_text(legal_html, encoding="utf-8")
+        sitemap_urls.append(f"{spec.base_url}/{legal_name}")
 
     # Sitemap, robots, .nojekyll, and Edge Functions
     sitemap_entries = "\n".join(

@@ -318,6 +318,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                 <span>•</span>
                 <a href="robots.txt" class="hover:underline">Robots TXT</a>
                 <span>•</span>
+                <a href="privacy.html" class="hover:underline">Privacy Policy</a>
+                <span>•</span>
+                <a href="terms.html" class="hover:underline">Terms</a>
+                <span>•</span>
                 <a href="https://github.com/collincarlton/lean_multimodal_platform" class="hover:underline">GitHub Repository</a>
             </div>
         </div>
@@ -355,6 +359,10 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
                         <option>Stump Grinding</option>
                     </select>
                 </div>
+                <label class="flex items-start gap-2 text-[11px] leading-snug text-slate-600 cursor-pointer">
+                    <input name="consent" type="checkbox" required class="mt-0.5 accent-emerald-600">
+                    <span>I agree to the <a href="privacy.html" target="_blank" class="text-emerald-700 underline">Privacy Policy</a> and <a href="terms.html" target="_blank" class="text-emerald-700 underline">Terms</a>, and consent to be contacted by up to 3 verified local specialists in my selected city via phone, email, or SMS (standard rates may apply). Reply STOP to opt out.</span>
+                </label>
                 <button type="submit" class="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow transition mt-2">
                     Submit Quote Request ⚡
                 </button>
@@ -536,8 +544,9 @@ CITY_TEMPLATE = """<!DOCTYPE html>
         </div>
     </main>
 
-    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs">
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs space-y-1">
         <p>© {{ year }} DFW Arborist Directory. All rights reserved.</p>
+        <p><a href="../privacy.html" class="underline hover:text-white">Privacy Policy</a> • <a href="../terms.html" class="underline hover:text-white">Terms of Service</a></p>
     </footer>
 </body>
 </html>"""
@@ -629,8 +638,9 @@ LISTING_TEMPLATE = """<!DOCTYPE html>
         </div>
     </main>
 
-    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs">
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-xs space-y-1">
         <p>© {{ year }} DFW Arborist Directory. All rights reserved.</p>
+        <p><a href="../privacy.html" class="underline hover:text-white">Privacy Policy</a> • <a href="../terms.html" class="underline hover:text-white">Terms of Service</a></p>
     </footer>
 </body>
 </html>"""
@@ -861,7 +871,10 @@ def build_static_directory(
         )
         (listings_dir / f"{item['slug']}.html").write_text(rendered_listing, encoding="utf-8")
 
-    # 6. Generate sitemap.xml, robots.txt, .nojekyll
+    # 6. Generate legal pages, sitemap.xml, robots.txt, .nojekyll
+    from hyper_kaizen.pseo_compiler import build_legal_pages
+    for legal_name, legal_html in build_legal_pages(niche["name"], "Dallas-Fort Worth, TX", BASE_URL, datetime.now(timezone.utc).strftime("%Y-%m-%d")).items():
+        (target_dir / legal_name).write_text(legal_html, encoding="utf-8")
     sitemap_content = generate_sitemap_xml(listings, city_slugs, BASE_URL)
     (target_dir / "sitemap.xml").write_text(sitemap_content, encoding="utf-8")
     robots_content = generate_robots_txt(BASE_URL)

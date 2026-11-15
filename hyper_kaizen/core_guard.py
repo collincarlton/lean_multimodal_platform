@@ -158,7 +158,24 @@ def init_hyper_kaizen_schema() -> None:
             )
             """
         )
+        lead_dispatch_sql = """
+            CREATE TABLE IF NOT EXISTS lead_dispatch_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                niche_slug TEXT,
+                city TEXT,
+                lead_summary TEXT,
+                recipient_company TEXT,
+                recipient_contact TEXT,
+                sent_at TEXT,
+                status TEXT,
+                outcome TEXT
+            )
+        """
+        conn.execute(lead_dispatch_sql)
         conn.commit()
+    with get_sqlite_connection(ENGINE_DB_PATH) as econn:
+        econn.execute(lead_dispatch_sql)
+        econn.commit()
 
 
 class MemoryBudgetGuard:
