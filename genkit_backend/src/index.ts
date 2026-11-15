@@ -1,6 +1,4 @@
-import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import path from 'path';
 import dotenv from 'dotenv';
@@ -18,14 +16,61 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') });
 import { ai } from './ai';
 export { ai };
 
-import { executeMultimodalReasoning } from './flows';
+import {
+  executeMultimodalReasoning,
+  getModelPriority,
+  normalizeRawInput,
+} from './flows';
+import { SlidingWindowRpmLimiter } from './rate_limiter';
 import './tools';
 
 const app = express();
 const PORT = process.env.PORT || 5050;
 const HOST = process.env.HOST || '127.0.0.1';
+const LOOPBACK_ORIGIN_RE = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?$/i;
+const rpmLimiter = new SlidingWindowRpmLimiter(
+  Number(process.env.MAX_RPM || 15),
+  60_000
+);
 
-app.use(cors());
+function enforceLoopbackCors(req: Request, res: Response, next: NextFunction): void {
+  const origin = req.headers.origin;
+  if (origin && !LOOPBACK_ORIGIN_RE.test(origin)) {
+    res.status(403).json({
+      error: 'CORS policy: non-loopback origin rejected.',
+    });
+    return;
+  }
+  next();
+}
+
+function enforceRpmLimit(req: Request, res: Response, next: NextFunction): void {
+  const decision = rpmLimiter.tryAcquire();
+  res.setHeader('X-RateLimit-Limit', String(decision.limit));
+  res.setHeader('X-RateLimit-Remaining', String(decision.remaining));
+  if (!decision.allowed) {
+    res.setHeader('Retry-After', String(decision.retryAfterSeconds));
+    res.status(429).json({
+      error: `FinOps RPM ceiling (${decision.limit} RPM) reached. Retry after ${decision.retryAfterSeconds}s.`,
+      retryAfterSeconds: decision.retryAfterSeconds,
+    });
+    return;
+  }
+  next();
+}
+
+app.use(enforceLoopbackCors);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || LOOPBACK_ORIGIN_RE.test(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
+  })
+);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -34,13 +79,26 @@ app.use(express.static(webBuildPath));
 
 app.get('/api/health', (_req, res) => {
   const mem = process.memoryUsage();
+  const models = getModelPriority();
   res.json({
     status: 'ONLINE',
     mode: 'ZERO_COST_SOVEREIGN',
-    activeModel: process.env.MODEL_NAME || 'gemini-3-flash-preview',
+    activeModel: models[0],
+    fallbackModels: models.slice(1),
+    rpmRemaining: rpmLimiter.peekRemaining(),
     uptimeSeconds: Math.floor(process.uptime()),
     memoryRssMb: (mem.rss / 1024 / 1024).toFixed(2),
     heapUsedMb: (mem.heapUsed / 1024 / 1024).toFixed(2),
+    port: PORT,
+  });
+});
+
+app.get('/healthz', (_req, res) => {
+  const models = getModelPriority();
+  res.status(200).json({
+    status: 'ok',
+    activeModel: models[0],
+    rpmRemaining: rpmLimiter.peekRemaining(),
     port: PORT,
   });
 });
@@ -99,15 +157,16 @@ app.delete('/api/history', (_req, res) => {
   res.json({ success: true });
 });
 
-// Reasoning API (with Auto-Persistence)
-app.post('/api/reason', async (req, res) => {
+// Reasoning API (with Auto-Persistence & FinOps RPM Governor)
+app.post('/api/reason', enforceRpmLimit, async (req, res) => {
   const start = Date.now();
   try {
-    const output = await executeMultimodalReasoning(req.body);
+    const normalizedInput = normalizeRawInput(req.body);
+    const output = await executeMultimodalReasoning(normalizedInput);
     const latencyMs = Date.now() - start;
 
     // Automatically persist to zero-overhead local JSON vault
-    const saved = saveSession(req.body, output, latencyMs);
+    const saved = saveSession(normalizedInput, output, latencyMs);
 
     res.json({
       ...output,
@@ -120,6 +179,67 @@ app.post('/api/reason', async (req, res) => {
       error: err.message || 'Internal reasoning pipeline exception',
       timestamp: new Date().toISOString(),
     });
+  }
+});
+
+// Gateway SSE Streaming API matching Dart GenkitGatewayClient contract
+app.post('/gateway/stream', enforceRpmLimit, async (req, res) => {
+  const start = Date.now();
+  try {
+    const normalizedInput = normalizeRawInput(req.body);
+    const output = await executeMultimodalReasoning(normalizedInput);
+    const latencyMs = Date.now() - start;
+    const saved = saveSession(normalizedInput, output, latencyMs);
+
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+
+    const contentFrame = {
+      content: output.summary,
+      done: false,
+      metadata: {
+        sessionId: saved.id,
+        latencyMs,
+        model: getModelPriority()[0],
+        sentiment: output.sentiment,
+        confidenceScore: output.confidenceScore,
+        entities: output.entities,
+        actionDirectives: output.actionDirectives,
+        reasoningSteps: output.reasoningSteps,
+        vaultGrounding: output.vaultGrounding,
+        acousticAnalysis: output.acousticAnalysis,
+      },
+    };
+    const finalFrame = {
+      content: '',
+      done: true,
+      metadata: {
+        sessionId: saved.id,
+        latencyMs,
+        model: getModelPriority()[0],
+      },
+    };
+
+    res.write(`data: ${JSON.stringify(contentFrame)}\n\n`);
+    res.write(`data: ${JSON.stringify(finalFrame)}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (err: any) {
+    console.error('[GATEWAY STREAM FAULT]', err);
+    if (!res.headersSent) {
+      res.status(500).json({
+        error: err.message || 'Gateway stream pipeline exception',
+        timestamp: new Date().toISOString(),
+      });
+    } else {
+      res.write(
+        `data: ${JSON.stringify({ content: `GATEWAY_ERROR: ${err.message || 'unknown'}`, done: true })}\n\n`
+      );
+      res.write('data: [DONE]\n\n');
+      res.end();
+    }
   }
 });
 

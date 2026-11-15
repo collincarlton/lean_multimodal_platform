@@ -1,9 +1,11 @@
-import { z } from 'zod';
 import https from 'https';
+import fs from 'fs';
+import os from 'os';
 import { URL } from 'url';
 import dotenv from 'dotenv';
 import path from 'path';
-import { resolveVaultFile, parseDriveUrl } from './drive_vault';
+import { parseDriveUrl } from './drive_vault';
+import { vaultCatalogTool, vaultResolveTool } from './tools';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
@@ -29,11 +31,152 @@ export {
   MultimodalReasoningOutput,
 };
 
-const VERIFIED_MODELS: string[] = [
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-pro',
+const DEFAULT_VERIFIED_MODELS: string[] = [
+  'gemini-3.5-flash',
+  'gemini-3.5-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-flash-lite-latest',
 ];
+
+const RETIRED_MODEL_RE = /gemini-(1\.5|2\.0|2\.5)-/i;
+
+export const STATIC_SYSTEM_INSTRUCTION = `[SYSTEM INSTRUCTION]
+You are the Sovereign Lean Multimodal Reasoning Engine powered by Frontier Gemini.
+Analyze the user instruction along with all audio, visual, gateway context, and Google One 5 TB Vault telemetry.
+If an audio recording is present:
+1. Transcribe speech into acousticAnalysis.transcript.
+2. Characterize pitch, tone, frequency patterns, and noise into acousticAnalysis.audioCharacteristics.
+3. Isolate discrepancies or anomalies into acousticAnalysis.detectedAnomalies.
+If a Google One Vault asset is referenced, correlate observations against its documented engineering tolerances.
+Always extract typed entities with confidence ratings (0.0 to 1.0), prioritized action directives (LOW, MEDIUM, HIGH, CRITICAL), sentiment (POSITIVE, NEUTRAL, NEGATIVE, MIXED), confidenceScore (0.0 to 1.0), and structured step-by-step reasoning.
+Respond strictly in valid JSON matching the structured output schema.`;
+
+const MULTIMODAL_RESPONSE_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    summary: { type: 'STRING' },
+    sentiment: {
+      type: 'STRING',
+      enum: ['POSITIVE', 'NEUTRAL', 'NEGATIVE', 'MIXED'],
+    },
+    confidenceScore: { type: 'NUMBER' },
+    acousticAnalysis: {
+      type: 'OBJECT',
+      properties: {
+        transcript: { type: 'STRING' },
+        audioCharacteristics: { type: 'STRING' },
+        detectedAnomalies: { type: 'ARRAY', items: { type: 'STRING' } },
+      },
+    },
+    entities: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          name: { type: 'STRING' },
+          category: { type: 'STRING' },
+          confidence: { type: 'NUMBER' },
+        },
+        required: ['name', 'category', 'confidence'],
+      },
+    },
+    actionDirectives: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        properties: {
+          priority: {
+            type: 'STRING',
+            enum: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'],
+          },
+          instruction: { type: 'STRING' },
+        },
+        required: ['priority', 'instruction'],
+      },
+    },
+    reasoningSteps: {
+      type: 'ARRAY',
+      items: { type: 'STRING' },
+    },
+  },
+  required: [
+    'summary',
+    'sentiment',
+    'confidenceScore',
+    'entities',
+    'actionDirectives',
+    'reasoningSteps',
+  ],
+};
+
+export function getModelPriority(envModel = process.env.MODEL_NAME): string[] {
+  const candidate = (envModel || '').trim();
+  if (candidate && !RETIRED_MODEL_RE.test(candidate)) {
+    return [
+      candidate,
+      ...DEFAULT_VERIFIED_MODELS.filter((model) => model !== candidate),
+    ];
+  }
+  return [...DEFAULT_VERIFIED_MODELS];
+}
+
+function resolveGeminiApiKey(): string {
+  const envKey =
+    process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY || '';
+  const cleanedEnv = envKey.trim().replace(/^["']|["']$/g, '');
+  if (cleanedEnv) {
+    return cleanedEnv;
+  }
+
+  try {
+    const keysPath = path.join(os.homedir(), '.lunora', 'keys.json');
+    if (fs.existsSync(keysPath)) {
+      const parsed = JSON.parse(fs.readFileSync(keysPath, 'utf8'));
+      const fileKey = String(
+        parsed?.GEMINI_API_KEY || parsed?.gemini_api_key || ''
+      )
+        .trim()
+        .replace(/^["']|["']$/g, '');
+      if (fileKey) return fileKey;
+    }
+  } catch {
+    // Fall through cleanly if keys.json is unreadable
+  }
+  return '';
+}
+
+export function normalizeRawInput(rawInput: unknown): MultimodalReasoningInput {
+  const payload =
+    rawInput && typeof rawInput === 'object'
+      ? { ...(rawInput as Record<string, unknown>) }
+      : {};
+
+  if (!payload.audioBase64 && typeof payload.audio_b64 === 'string') {
+    payload.audioBase64 = payload.audio_b64;
+  }
+  if (!payload.imageBase64 && typeof payload.image_b64 === 'string') {
+    payload.imageBase64 = payload.image_b64;
+  }
+
+  const basePrompt =
+    typeof payload.prompt === 'string' && payload.prompt.trim().length > 0
+      ? payload.prompt.trim()
+      : 'Analyze the provided multimodal context.';
+
+  if (payload.context !== undefined && payload.context !== null) {
+    const contextText =
+      typeof payload.context === 'string'
+        ? payload.context.trim()
+        : JSON.stringify(payload.context);
+    if (contextText && contextText !== '{}') {
+      payload.prompt = `${basePrompt}\n\n[GATEWAY CONTEXT]\n${contextText.slice(0, 4000)}`;
+      return MultimodalReasoningInputSchema.parse(payload);
+    }
+  }
+
+  payload.prompt = basePrompt;
+  return MultimodalReasoningInputSchema.parse(payload);
+}
 
 function normalizeOutput(parsed: any, vaultRef?: VaultGroundingRef): MultimodalReasoningOutput {
   const summary = typeof parsed?.summary === 'string'
@@ -151,9 +294,8 @@ function requestHttpsJson(
 export async function executeMultimodalReasoning(
   rawInput: unknown
 ): Promise<MultimodalReasoningOutput> {
-  const input = MultimodalReasoningInputSchema.parse(rawInput);
-  const rawKey = process.env.GEMINI_API_KEY || '';
-  const apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
+  const input = normalizeRawInput(rawInput);
+  const apiKey = resolveGeminiApiKey();
 
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY environment variable is not defined.');
@@ -164,7 +306,8 @@ export async function executeMultimodalReasoning(
 
   const targetRef = input.driveFileUrl || input.driveFileId || input.vaultFileName;
   if (targetRef) {
-    const asset = resolveVaultFile(targetRef);
+    const resolved = await vaultResolveTool({ driveUrlOrId: targetRef });
+    const asset = resolved.found ? resolved.asset : null;
     if (asset) {
       vaultRef = {
         fileName: asset.name,
@@ -173,8 +316,7 @@ export async function executeMultimodalReasoning(
         sizeBytes: asset.sizeBytes,
         status: 'GROUNDED_ZERO_LOCAL_IO',
       };
-      vaultContextPrompt = `
-[GOOGLE ONE 5 TB VAULT GROUNDING ASSET]
+      vaultContextPrompt = `[GOOGLE ONE 5 TB VAULT GROUNDING ASSET]
 Asset: ${asset.name}
 MIME: ${asset.mimeType}
 Size: ${(asset.sizeBytes / 1024 / 1024).toFixed(1)} MB (Direct Cloud Stream, Zero Host Disk IO)
@@ -190,43 +332,32 @@ Directives: Cross-reference telemetry against the structural tolerances and vibr
         sizeBytes: 0,
         status: 'DIRECT_DRIVE_REF',
       };
-      vaultContextPrompt = `
-[GOOGLE DRIVE CLOUD ASSET]
+      vaultContextPrompt = `[GOOGLE DRIVE CLOUD ASSET]
 Reference: ${vaultRef.driveUrl}
 File Name: ${vaultRef.fileName}
 Directives: Ground diagnostic inference referencing this cloud asset.`;
     }
+  } else {
+    const catalog = await vaultCatalogTool({});
+    if (catalog.length > 0) {
+      const compactLines = catalog
+        .slice(0, 8)
+        .map((item) => `- ${item.name} (${item.id}): ${item.description}`)
+        .join('\n');
+      vaultContextPrompt = `[GOOGLE ONE 5 TB VAULT CATALOG INDEX]\n${compactLines}`;
+    }
   }
 
-  const systemInstructionText = `[SYSTEM INSTRUCTION]
-You are the Sovereign Lean Multimodal Reasoning Engine powered by Frontier Gemini.
-Analyze the user instruction along with all audio, visual, and Google One 5 TB Vault telemetry.
-If an audio recording is present:
-1. Transcribe speech into acousticAnalysis.transcript.
-2. Characterize pitch, tone, frequency patterns, and noise into acousticAnalysis.audioCharacteristics.
-3. Isolate discrepancies or anomalies into acousticAnalysis.detectedAnomalies.
-If a Google One Vault asset is referenced, correlate acoustic anomalies against its documented engineering tolerances.
-Always extract typed entities with confidence ratings, prioritized action directives (LOW, MEDIUM, HIGH, CRITICAL), and structured step-by-step reasoning.
-Output strictly in valid JSON matching this schema:
-{
-  "summary": "Diagnostic synthesis",
-  "acousticAnalysis": {
-    "transcript": "Transcribed speech",
-    "audioCharacteristics": "Acoustic observations",
-    "detectedAnomalies": ["Anomaly 1"]
-  },
-  "entities": [{"name": "Entity Name", "category": "Hardware", "confidence": 0.95}],
-  "actionDirectives": [{"priority": "HIGH", "instruction": "Action instruction"}],
-  "reasoningSteps": ["Step 1", "Step 2"]
-}
-
-${vaultContextPrompt}
-
-[USER REQUEST]
-${input.prompt}`;
+  // Place dynamic vault grounding + user prompt after static systemInstruction
+  // so Gemini implicit prefix caching reuses STATIC_SYSTEM_INSTRUCTION across requests.
+  const userTextSections: string[] = [];
+  if (vaultContextPrompt) {
+    userTextSections.push(vaultContextPrompt);
+  }
+  userTextSections.push(`[USER REQUEST]\n${input.prompt}`);
 
   const parts: Array<Record<string, unknown>> = [
-    { text: systemInstructionText }
+    { text: userTextSections.join('\n\n') },
   ];
 
   let audioBypassedReason: string | null = null;
@@ -258,53 +389,36 @@ ${input.prompt}`;
     }
   }
 
-  // Two-Pass Grounding Engine (G-02): Pass 1 Multimodal Analysis -> Pass 2 Structured JSON
+  // Single-Pass Structured Output Grounding (1 HTTPS call per model attempt; header-only API auth)
   let lastError: Error | null = null;
-  for (const model of VERIFIED_MODELS) {
+  for (const model of getModelPriority()) {
     try {
-      // Pass 1: Unstructured Grounded Multimodal Reasoning
-      const pass1Payload = {
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: STATIC_SYSTEM_INSTRUCTION }],
+        },
         contents: [{ role: 'user', parts }],
-        generationConfig: { temperature: 0.2 },
-      };
-      const pass1Endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const pass1Result = await requestHttpsJson(pass1Endpoint, pass1Payload, apiKey, 25000);
-      const pass1Text = pass1Result.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!pass1Text) {
-        throw new Error(`Model ${model} produced an empty reasoning candidate.`);
-      }
-
-      // Pass 2: Strict Structured JSON Schema Extraction
-      const pass2Prompt = `Extract the multimodal reasoning and diagnostic analysis into exact JSON matching this schema:
-{
-  "summary": "High-density synthesis",
-  "sentiment": "POSITIVE" | "NEUTRAL" | "NEGATIVE" | "MIXED",
-  "confidenceScore": 0.95,
-  "acousticAnalysis": {"transcript": "...", "audioCharacteristics": "...", "detectedAnomalies": []},
-  "entities": [{"name": "...", "category": "...", "confidence": 0.9}],
-  "actionDirectives": [{"priority": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL", "instruction": "..."}],
-  "reasoningSteps": ["Step 1", "Step 2"]
-}
-
-Reasoning Analysis:
-${pass1Text}`;
-
-      const pass2Payload = {
-        contents: [{ role: 'user', parts: [{ text: pass2Prompt }] }],
         generationConfig: {
-          temperature: 0.1,
+          temperature: 0.2,
           responseMimeType: 'application/json',
+          responseSchema: MULTIMODAL_RESPONSE_SCHEMA,
         },
       };
-      const pass2Endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const pass2Result = await requestHttpsJson(pass2Endpoint, pass2Payload, apiKey, 25000);
-      const rawJsonText = pass2Result.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+      const result = await requestHttpsJson(endpoint, payload, apiKey, 25000);
+      const rawJsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!rawJsonText) {
+        throw new Error(`Model ${model} produced an empty reasoning candidate.`);
+      }
 
       let parsed: any;
       try {
         parsed = JSON.parse(rawJsonText);
       } catch {
-        const cleanText = rawJsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '');
+        const cleanText = rawJsonText
+          .replace(/^```json\s*/i, '')
+          .replace(/\s*```$/, '')
+          .trim();
         parsed = JSON.parse(cleanText);
       }
 
