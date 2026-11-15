@@ -7,7 +7,7 @@
 <meta name="description" content="Emergency Rowlett Tree Removal Service is a premier emergency tree service provider in Plano, TX, specializing in crane-assisted hazardous tree removal, rapid storm debris clearance, and precision arboriculture. Available 24/7 with a 4.8★ client satisfaction record across 972+ local property owners.">
 <meta name="robots" content="index,follow">
 <meta property="article:modified_time" content="2026-11-15">
-<link rel="canonical" href="https://collincarlton.github.io/dfw-tree-directory/listings/emergency-rowlett-tree-removal-service.html">
+<link rel="canonical" href="https://collincarlton.github.io/lean_multimodal_platform/listings/emergency-rowlett-tree-removal-service.html">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0f172a}
@@ -116,9 +116,14 @@
     var fd = new FormData(e.target);
     var payload = {niche_slug:niche,provider:fd.get("provider"),name:fd.get("name"),phone:fd.get("phone"),notes:fd.get("notes")};
     beacon("quote_submit", payload.provider);
+    var statusEl = document.getElementById("lead-status");
+    var mailHref = "mailto:interchangecontainer@gmail.com?subject=" + encodeURIComponent("Priority Dispatch Request: " + payload.provider) + "&body=" + encodeURIComponent("Provider: " + payload.provider + "
+Name: " + payload.name + "
+Phone: " + payload.phone + "
+Notes: " + (payload.notes || ""));
     fetch("/api/lead", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-      .then(function(){ document.getElementById("lead-status").textContent = "Request routed! Expected dispatch reply under 15 min."; })
-      .catch(function(){ document.getElementById("lead-status").textContent = "Request captured locally for dispatch."; });
+      .then(function(r){ if(!r.ok) throw new Error(r.status); statusEl.textContent = "Request routed! Expected dispatch reply under 15 min."; })
+      .catch(function(){ statusEl.innerHTML = 'Static mode active &mdash; <a href="' + mailHref + '" class="underline font-bold text-emerald-700">Click here to send quote directly via Email Dispatch</a>.'; });
   });
 })();
 </script></body></html>

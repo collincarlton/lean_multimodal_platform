@@ -212,7 +212,7 @@ Tone: Direct, technical, highly authoritative, zero fluff."""
             from google.genai import types
 
             client = genai.Client(api_key=api_key, http_options={"timeout": 15000})
-            for model_id in ("gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"):
+            for model_id in ("gemini-4-hydrogen", "gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"):
                 try:
                     resp = client.models.generate_content(
                         model=model_id,

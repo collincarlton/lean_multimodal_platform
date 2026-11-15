@@ -28,7 +28,7 @@ ENGINE_DB_PATH = HOME_DIR / "lean_multimodal_platform" / "data" / "engine1.db"
 AISTUDIO_SCRIPTS_DIR = HOME_DIR / "AIStudioOrg" / "scripts"
 KEYS_PATH = HOME_DIR / ".lunora" / "keys.json"
 
-MODEL_PRIORITY = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
+MODEL_PRIORITY = ["gemini-4-hydrogen", "gemini-3.8-flash", "gemini-2.5-flash", "gemini-2.0-flash"]
 HTTP_TIMEOUT_MS = 15000
 HEAVY_RESOURCE_TYPES = {"image", "media", "font"}
 

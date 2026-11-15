@@ -410,34 +410,44 @@ def refine_niche_listings(
     crawled = 0
     pending_enrich: List[Tuple[Dict[str, Any], str]] = []
 
+    raw_items: List[Dict[str, Any]] = []
+    to_crawl_indices: List[int] = []
     for r in rows:
         item = dict(r)
         if not _is_valid_real_phone(item.get("phone")):
             rejected_fake += 1
             continue
-
-        tech_audit: Dict[str, Any] = {}
         try:
             tech_audit = json.loads(item.get("tech_audit_json") or "{}")
         except Exception:
             tech_audit = {}
+        item["tech_audit"] = tech_audit
+        idx = len(raw_items)
+        raw_items.append(item)
+        if (not tech_audit or crawl_limit >= target_count) and len(to_crawl_indices) < crawl_limit:
+            to_crawl_indices.append(idx)
 
-        # Deep crawl up to crawl_limit websites (3s mobile-hotspot barrier + MemoryBudgetGuard)
-        if not tech_audit and crawled < crawl_limit:
-            guard.check_memory_pressure()
-            tech_audit = inspect_website_fast(item.get("website"), timeout_sec=3.0)
-            guard.note_url_processed()
-            crawled += 1
-            if tech_audit.get("pain_score", 0.0) >= 35.0:
-                _record_prospect_audit(item, tech_audit, spec.niche_slug)
-                audits_queued += 1
-        elif tech_audit.get("pain_score", 0.0) >= 35.0:
+    if to_crawl_indices:
+        from concurrent.futures import ThreadPoolExecutor
+
+        guard.check_memory_pressure()
+        urls_to_probe = [(idx, raw_items[idx].get("website")) for idx in to_crawl_indices]
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for idx, audit_res in zip(
+                [u[0] for u in urls_to_probe],
+                pool.map(lambda pair: inspect_website_fast(pair[1], timeout_sec=3.0), urls_to_probe),
+            ):
+                raw_items[idx]["tech_audit"] = audit_res
+                guard.note_url_processed()
+                crawled += 1
+
+    for item in raw_items:
+        tech_audit = item.get("tech_audit") or {}
+        if tech_audit.get("pain_score", 0.0) >= 35.0:
             _record_prospect_audit(item, tech_audit, spec.niche_slug)
             audits_queued += 1
 
-        item["tech_audit"] = tech_audit
         evidence_text = tech_audit.get("evidence_text", "")
-
         if not item.get("summary") or item.get("is_enriched") == 0:
             pending_enrich.append((item, evidence_text))
         else:
@@ -534,6 +544,7 @@ def refine_niche_listings(
         "count": len(listings),
         "rejected_fake": rejected_fake,
         "crawled": crawled,
+        "recycle_count": guard.recycle_count,
         "enriched_new": enriched_count,
         "audits_queued": audits_queued,
         "memory": guard.get_memory_stats(),

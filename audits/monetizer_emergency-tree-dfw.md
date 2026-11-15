@@ -1,5 +1,5 @@
 # Monetizer & Backlink Pack — DFW Emergency Tree Removal & Crane Arborist Directory
-Generated: 2026-11-15T06:26:34.991394+00:00
+Generated: 2026-11-15T06:30:56.343308+00:00
 
 ## Part 1: Free-Lead-First -> $149/mo Featured Upgrade Outreach
 ### Emergency North Dallas Tree Service (Dallas) — 4.8★ (972 reviews)
@@ -25,35 +25,37 @@ Generated: 2026-11-15T06:26:34.991394+00:00
 ## Part 2: Verified >=4.8★ Embeddable Badge Snippets (Backlink Flywheel)
 ### Emergency North Dallas Tree Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/emergency-north-dallas-tree-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency North Dallas Tree Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/emergency-north-dallas-tree-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency North Dallas Tree Service</a>
 ```
 
 ### Emergency Lakewood Tree Removal Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/emergency-lakewood-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Lakewood Tree Removal Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/emergency-lakewood-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Lakewood Tree Removal Service</a>
 ```
 
 ### Emergency Plano Tree Removal Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/emergency-plano-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Plano Tree Removal Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/emergency-plano-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Plano Tree Removal Service</a>
 ```
 
 ### Urgent Texas Tree Removal Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/urgent-texas-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Urgent Texas Tree Removal Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/urgent-texas-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Urgent Texas Tree Removal Service</a>
 ```
 
 ### Emergency Rowlett Tree Removal Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/emergency-rowlett-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Rowlett Tree Removal Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/emergency-rowlett-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Emergency Rowlett Tree Removal Service</a>
 ```
 
 ### Plano Tree Removal Service (4.8★)
 ```html
-<a href="https://collincarlton.github.io/dfw-tree-directory/listings/plano-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Plano Tree Removal Service</a>
+<a href="https://collincarlton.github.io/lean_multimodal_platform/listings/plano-tree-removal-service.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;border-radius:8px;background:#0f172a;color:#34d399;font:600 13px system-ui,sans-serif;text-decoration:none;border:1px solid #059669;">&#9733; Verified 4.8★ Top Arboriculture &amp; Tree Care &mdash; Plano Tree Removal Service</a>
 ```
 
 ## Part 3: Engine 1 -> Engine 2 Broken-Site Audit Crossover Targets
+- **Five Star Tree Service** (Fort Worth) | Pain `87.0` | ICP `83.4` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), Missing mobile viewport tag (broken smartphone layout)
+- **Treehugger Tree Service** (Arlington) | Pain `83.0` | ICP `96.6` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), No clickable tel: emergency call link
 - **Emergency North Dallas Tree Service** (Dallas) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
 - **Emergency Lakewood Tree Removal Service** (Dallas) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
 - **Emergency Plano Tree Removal Service** (Plano) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
@@ -61,5 +63,4 @@ Generated: 2026-11-15T06:26:34.991394+00:00
 - **Emergency Rowlett Tree Removal Service** (Plano) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
 - **Plano Tree Removal Service** (Plano) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
 - **Garland Tree Removal Service** (Garland) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (URLError)
-- **Clean Edge Tree Service & Removal, LLC** (Denton) | Pain `47.0` | ICP `89.4` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: No HTTPS/SSL certificate (browser security warning), No instant quote form or SMS/chat capture widget
-- **Green Pine Tree Services** (Dallas) | Pain `40.0` | ICP `88.0` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: No clickable tel: emergency call link, No instant quote form or SMS/chat capture widget
+- **Tree Shepherds** (Irving) | Pain `74.0` | ICP `94.8` | Status `DIRECTORY_CROSSOVER_READY` | Bottlenecks: Website timeout/error within 3s barrier (HTTPError)

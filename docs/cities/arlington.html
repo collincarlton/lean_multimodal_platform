@@ -7,14 +7,14 @@
 <meta name="description" content="15 verified arboriculture &amp; tree care pros serving Arlington, TX. Average 4.92 stars.">
 <meta name="robots" content="index,follow">
 <meta property="article:modified_time" content="2026-11-15">
-<link rel="canonical" href="https://collincarlton.github.io/dfw-tree-directory/cities/arlington.html">
+<link rel="canonical" href="https://collincarlton.github.io/lean_multimodal_platform/cities/arlington.html">
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;color:#0f172a}
   .badge-pill{font-size:11px;padding:2px 8px;border-radius:9999px;font-weight:600}
 </style>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "DFW Emergency Tree Removal & Crane Arborist Directory", "url": "https://collincarlton.github.io/dfw-tree-directory"}</script>
-<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://collincarlton.github.io/dfw-tree-directory/"}, {"@type": "ListItem", "position": 2, "name": "Arlington", "item": "https://collincarlton.github.io/dfw-tree-directory/cities/arlington.html"}]}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Organization", "name": "DFW Emergency Tree Removal & Crane Arborist Directory", "url": "https://collincarlton.github.io/lean_multimodal_platform"}</script>
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [{"@type": "ListItem", "position": 1, "name": "Home", "item": "https://collincarlton.github.io/lean_multimodal_platform/"}, {"@type": "ListItem", "position": 2, "name": "Arlington", "item": "https://collincarlton.github.io/lean_multimodal_platform/cities/arlington.html"}]}</script>
 <script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How fast do 24/7 emergency tree crews arrive in Dallas-Fort Worth?", "acceptedAnswer": {"@type": "Answer", "text": "Verified 24/7 emergency crane and storm crews in DFW typically respond within 60 to 120 minutes for roof impacts, blocked driveways, and fallen limbs after severe North Texas thunderstorms."}}, {"@type": "Question", "name": "When is crane-assisted tree removal required instead of standard climbing?", "acceptedAnswer": {"@type": "Answer", "text": "Crane rigging is essential when heavy hardwoods exceed 50 feet, lean over roof trusses, pool enclosures, or energized drop lines, or exhibit compromised root plates after saturated clay soil shifts."}}, {"@type": "Question", "name": "What should DFW homeowners verify before hiring a storm-damage arborist?", "acceptedAnswer": {"@type": "Answer", "text": "Confirm an active ISA Certified Arborist credential, general liability coverage ($1M+ minimum), workers compensation, and a written itemization separating structural roof stabilization from haul-off for insurance claims."}}, {"@type": "Question", "name": "How much does emergency tree removal cost in Dallas & Fort Worth?", "acceptedAnswer": {"@type": "Answer", "text": "Minor limb clearing starts around $450-$850, mature 50ft oaks average $1,400-$2,600, and complex crane-rigged extractions over structures range from $2,800 to $5,500+ depending on staging access."}}]}</script>
 </head>
 <body>
@@ -138,9 +138,14 @@
     var fd = new FormData(e.target);
     var payload = {niche_slug:niche,provider:fd.get("provider"),name:fd.get("name"),phone:fd.get("phone"),notes:fd.get("notes")};
     beacon("quote_submit", payload.provider);
+    var statusEl = document.getElementById("lead-status");
+    var mailHref = "mailto:interchangecontainer@gmail.com?subject=" + encodeURIComponent("Priority Dispatch Request: " + payload.provider) + "&body=" + encodeURIComponent("Provider: " + payload.provider + "
+Name: " + payload.name + "
+Phone: " + payload.phone + "
+Notes: " + (payload.notes || ""));
     fetch("/api/lead", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
-      .then(function(){ document.getElementById("lead-status").textContent = "Request routed! Expected dispatch reply under 15 min."; })
-      .catch(function(){ document.getElementById("lead-status").textContent = "Request captured locally for dispatch."; });
+      .then(function(r){ if(!r.ok) throw new Error(r.status); statusEl.textContent = "Request routed! Expected dispatch reply under 15 min."; })
+      .catch(function(){ statusEl.innerHTML = 'Static mode active &mdash; <a href="' + mailHref + '" class="underline font-bold text-emerald-700">Click here to send quote directly via Email Dispatch</a>.'; });
   });
 })();
 </script></body></html>

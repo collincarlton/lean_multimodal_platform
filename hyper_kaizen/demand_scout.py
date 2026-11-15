@@ -89,7 +89,7 @@ NICHE_CATALOG: Dict[str, NicheSpec] = {
                 "a": "Minor limb clearing starts around $450-$850, mature 50ft oaks average $1,400-$2,600, and complex crane-rigged extractions over structures range from $2,800 to $5,500+ depending on staging access.",
             },
         ],
-        base_url="https://collincarlton.github.io/dfw-tree-directory",
+        base_url="https://collincarlton.github.io/lean_multimodal_platform",
     ),
     "commercial-epoxy-dfw": NicheSpec(
         niche_slug="commercial-epoxy-dfw",

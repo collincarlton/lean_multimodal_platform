@@ -271,9 +271,11 @@ def _render_lead_modal_and_js(niche_slug: str) -> str:
     var fd = new FormData(e.target);
     var payload = {{niche_slug:niche,provider:fd.get("provider"),name:fd.get("name"),phone:fd.get("phone"),notes:fd.get("notes")}};
     beacon("quote_submit", payload.provider);
+    var statusEl = document.getElementById("lead-status");
+    var mailHref = "mailto:interchangecontainer@gmail.com?subject=" + encodeURIComponent("Priority Dispatch Request: " + payload.provider) + "&body=" + encodeURIComponent("Provider: " + payload.provider + "\nName: " + payload.name + "\nPhone: " + payload.phone + "\nNotes: " + (payload.notes || ""));
     fetch("/api/lead", {{method:"POST",headers:{{"Content-Type":"application/json"}},body:JSON.stringify(payload)}})
-      .then(function(){{ document.getElementById("lead-status").textContent = "Request routed! Expected dispatch reply under 15 min."; }})
-      .catch(function(){{ document.getElementById("lead-status").textContent = "Request captured locally for dispatch."; }});
+      .then(function(r){{ if(!r.ok) throw new Error(r.status); statusEl.textContent = "Request routed! Expected dispatch reply under 15 min."; }})
+      .catch(function(){{ statusEl.innerHTML = 'Static mode active &mdash; <a href="' + mailHref + '" class="underline font-bold text-emerald-700">Click here to send quote directly via Email Dispatch</a>.'; }});
   }});
 }})();
 </script>"""
