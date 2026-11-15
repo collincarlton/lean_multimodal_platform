@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://collincarlton.github.io/lean_multimodal_platform/sitemap.xml

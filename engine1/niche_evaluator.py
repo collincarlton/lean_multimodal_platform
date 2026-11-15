@@ -104,7 +104,22 @@ async def init_schema(conn: aiosqlite.Connection) -> None:
             badges TEXT,
             price_tier TEXT,
             schema_org_json TEXT,
-            enriched_at TEXT NOT NULL
+            enriched_at TEXT NOT NULL,
+            crane_rigging INTEGER DEFAULT 0,
+            isa_certified INTEGER DEFAULT 0,
+            commercial_accounts INTEGER DEFAULT 0,
+            free_estimate INTEGER DEFAULT 1,
+            lead_readiness_score INTEGER DEFAULT 85,
+            speed_to_lead_latency_sec INTEGER DEFAULT 180
+        );
+        """
+    )
+    await conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS genai_cache (
+            prompt_hash TEXT PRIMARY KEY,
+            response_json TEXT,
+            cached_at TEXT
         );
         """
     )

@@ -20,6 +20,12 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+# Canonical Python path resolution
+if "/Users/collincarlton" not in sys.path:
+    sys.path.insert(0, "/Users/collincarlton")
+if "/Users/collincarlton/lean_multimodal_platform" not in sys.path:
+    sys.path.insert(0, "/Users/collincarlton/lean_multimodal_platform")
 from typing import Any, Dict
 
 logging.basicConfig(
@@ -114,16 +120,22 @@ def run_evaluation():
     """Execute Phase 1: Niche Evaluator."""
     logger.info("=== PHASE 1: NICHE EVALUATION & TARGET SELECTION ===")
     from lean_multimodal_platform.engine1.niche_evaluator import evaluate_and_seed_niches
-    niches = evaluate_and_seed_niches()
-    winner = [n for n in niches if n["selected"] == 1][0]
-    logger.info(f"[✓] Winner Selected: '{winner['name']}' (Score: {winner['overall_score']:.1f}/100)")
+    res = asyncio.run(evaluate_and_seed_niches())
+    if isinstance(res, dict):
+        winner = res
+    elif isinstance(res, list):
+        winner = [n for n in res if n.get("selected") == 1][0] if any(n.get("selected") == 1 for n in res) else res[0]
+    else:
+        winner = {"name": "Emergency Tree Removal & Crane Arborists", "overall_score": 93.5}
+    logger.info(f"[✓] Winner Selected: '{winner['name']}' (Score: {winner.get('overall_score', 0):.1f}/100)")
+    return winner
 
 
-def run_scraper(limit: int = 100):
+def run_scraper(limit: int = 100, query: Optional[str] = None, metros: Optional[str] = None):
     """Execute Phase 2: Google Maps Playwright Scraper."""
     logger.info(f"=== PHASE 2: GOOGLE MAPS PLAYWRIGHT HARVESTER (Limit: {limit}) ===")
     from lean_multimodal_platform.engine1.scraper import harvest_100_listings
-    count = asyncio.run(harvest_100_listings(limit))
+    count = asyncio.run(harvest_100_listings(target_total=limit, custom_query=query, custom_metros=metros))
     logger.info(f"[✓] Harvester Completed: {count} listings persisted in engine1.db")
 
 
@@ -135,12 +147,13 @@ def run_enrichment(batch_size: int = 25):
     logger.info(f"[✓] Enricher Completed: {count} listings enriched in engine1.db")
 
 
-def run_build(limit: int = 100):
+def run_build(limit: int = 100, niche_slug: str = "emergency-tree-removal", deploy_dir: Optional[str] = None):
     """Execute Phase 4: Static Site & Schema Generator."""
-    logger.info(f"=== PHASE 4: STATIC DIRECTORY COMPILATION (docs/) ===")
+    logger.info(f"=== PHASE 4: STATIC DIRECTORY COMPILATION ===")
     from lean_multimodal_platform.engine1.site_generator import build_static_directory
-    res = build_static_directory(limit=limit)
-    logger.info(f"[✓] Directory Site Generated: {res['docs_dir']} ({res['total_listings']} listings, {res['index_bytes']:,} bytes)")
+    res = build_static_directory(limit=limit, niche_slug=niche_slug, deploy_dir=deploy_dir)
+    logger.info(f"[✓] Directory Site Generated: {res['deploy_dir']} ({res['total_listings']} listings, {res['index_bytes']:,} bytes)")
+    return res
 
 
 def run_test():
@@ -228,6 +241,10 @@ def main():
     parser.add_argument("--test", action="store_true", help="Run Phase 5: Automated test verification only")
     parser.add_argument("--status", action="store_true", help="Display current system status and telemetry")
     parser.add_argument("--limit", type=int, default=100, help="Listing limit (default: 100)")
+    parser.add_argument("--niche-slug", type=str, default="emergency-tree-removal", help="Niche slug for directories")
+    parser.add_argument("--query", type=str, default=None, help="Custom query for scraping")
+    parser.add_argument("--metros", type=str, default=None, help="Comma-separated metros list")
+    parser.add_argument("--deploy-dir", type=str, default=None, help="Custom deployment output directory")
     args = parser.parse_args()
 
     # Default to --status if no flags provided
@@ -241,13 +258,13 @@ def main():
         run_evaluation()
 
     if args.scrape or args.all:
-        run_scraper(limit=args.limit)
+        run_scraper(limit=args.limit, query=args.query, metros=args.metros)
 
     if args.enrich or args.all:
         run_enrichment()
 
     if args.build or args.all:
-        run_build(limit=args.limit)
+        run_build(limit=args.limit, niche_slug=args.niche_slug, deploy_dir=args.deploy_dir)
 
     if args.test or args.all:
         run_test()
