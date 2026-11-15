@@ -1,5 +1,5 @@
 # Monetizer & Backlink Pack — DFW Emergency Tree Removal & Crane Arborist Directory
-Generated: 2026-11-15T13:39:29.119962+00:00
+Generated: 2026-11-15T14:12:33.865471+00:00
 
 ## Part 1: Tracked Free-Lead-First -> Founding Partner Upgrade (Cap: 2 Free Leads)
 ### Emergency North Dallas Tree Service (Dallas) — 4.8★ (972 reviews) [FREE_TEASER_ACTIVE (0/2 sent)]

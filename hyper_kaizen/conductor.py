@@ -110,19 +110,40 @@ def main() -> int:
     parser.add_argument("--no-genai", action="store_true")
     args = parser.parse_args()
 
-    result = run_hyper_kaizen_pipeline(
-        niche_slug=args.niche_slug,
-        target_count=args.target_count,
-        crawl_limit=args.crawl_limit,
-        with_kaizen_dry_run=args.with_kaizen_dry_run or (not args.apply_mutations),
-        apply_mutations=args.apply_mutations,
-        simulate_gsc=args.simulate_gsc,
-        live_network=args.live_network,
-        live_gsc=args.live_gsc,
-        use_genai=not args.no_genai,
-    )
-    print(json.dumps(result, indent=2))
-    return 0
+    try:
+        result = run_hyper_kaizen_pipeline(
+            niche_slug=args.niche_slug,
+            target_count=args.target_count,
+            crawl_limit=args.crawl_limit,
+            with_kaizen_dry_run=args.with_kaizen_dry_run or (not args.apply_mutations),
+            apply_mutations=args.apply_mutations,
+            simulate_gsc=args.simulate_gsc,
+            live_network=args.live_network,
+            live_gsc=args.live_gsc,
+            use_genai=not args.no_genai,
+        )
+        print(json.dumps(result, indent=2))
+        return 0
+    except Exception as exc:
+        err_msg = f"hyper_kaizen.conductor exception: {type(exc).__name__}: {exc}"
+        try:
+            scripts_dir = str(HOME_DIR / "AIStudioOrg" / "scripts")
+            if scripts_dir not in sys.path:
+                sys.path.insert(0, scripts_dir)
+            import sqlite3
+            from lunora_execution_fault_analyzer import SYS_DB_PATH, analyze_failed_runs, get_sqlite_connection
+            if SYS_DB_PATH.exists():
+                with get_sqlite_connection(SYS_DB_PATH) as conn:
+                    conn.execute(
+                        "INSERT INTO runs (raw_intent, tier, plan_json, success, log) VALUES (?, ?, ?, 0, ?)",
+                        (f"hyper_kaizen:{args.niche_slug}", "hyper_kaizen", "{}", err_msg[:1000]),
+                    )
+                    conn.commit()
+            analyze_failed_runs()
+        except Exception:
+            pass
+        print(json.dumps({"error": err_msg}), file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":

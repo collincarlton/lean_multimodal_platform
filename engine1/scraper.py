@@ -39,21 +39,32 @@ DB_PATH = DATA_DIR / "engine1.db"
 
 
 def check_memory_headroom() -> bool:
-    """Checks macOS vm_stat free memory pages to ensure >= 350MB headroom."""
+    """Checks macOS RAM headroom via AIStudioOrg memory_guard (>=256MB abort floor)."""
     try:
-        res = subprocess.run(["vm_stat"], capture_output=True, text=True, timeout=2)
-        lines = res.stdout.splitlines()
-        free_pages = 0
-        spec_pages = 0
-        for l in lines:
-            if "Pages free" in l:
-                free_pages = int(l.split(":")[1].strip().rstrip("."))
-            elif "Pages speculative" in l:
-                spec_pages = int(l.split(":")[1].strip().rstrip("."))
-        free_mb = (free_pages + spec_pages) * 4096 / (1024 * 1024)
-        return free_mb >= 300
-    except Exception:
+        ai_scripts = "/Users/collincarlton/AIStudioOrg/scripts"
+        if ai_scripts not in sys.path:
+            sys.path.insert(0, ai_scripts)
+        from memory_guard import check_memory_pressure
+        status = check_memory_pressure(min_free_mb=512, abort_mb=256)
+        if status.get("should_abort"):
+            logger.warning("CRITICAL memory pressure (%.1f MB free) - aborting Playwright burst", status.get("free_mb", 0))
+            return False
         return True
+    except Exception:
+        try:
+            res = subprocess.run(["vm_stat"], capture_output=True, text=True, timeout=2)
+            lines = res.stdout.splitlines()
+            free_pages = 0
+            spec_pages = 0
+            for l in lines:
+                if "Pages free" in l:
+                    free_pages = int(l.split(":")[1].strip().rstrip("."))
+                elif "Pages speculative" in l:
+                    spec_pages = int(l.split(":")[1].strip().rstrip("."))
+            free_mb = (free_pages + spec_pages) * 4096 / (1024 * 1024)
+            return free_mb >= 256
+        except Exception:
+            return True
 
 
 def query_overpass_real_businesses(metro: str, timeout: float = 3.0) -> List[Dict[str, Any]]:
@@ -262,9 +273,32 @@ def scrape_query_playwright(query: str, target_count: int, seen_names: Set[str])
                     results.append(record)
                     logger.info(f"[{len(results)}/{target_count}] Scraped: {name} | Phone: {record['phone']} | Rating: {rating}★")
 
-                    # Recycle check every 25 cards
+                    # Recycle Chromium context + run GC every 25 cards to stay inside 8GB ceiling
                     if len(results) % 25 == 0:
                         gc.collect()
+                        try:
+                            ai_scripts = "/Users/collincarlton/AIStudioOrg/scripts"
+                            if ai_scripts not in sys.path:
+                                sys.path.insert(0, ai_scripts)
+                            from memory_guard import check_memory_pressure
+                            mem = check_memory_pressure(min_free_mb=512, abort_mb=256)
+                            if mem.get("should_recycle"):
+                                logger.info("Recycling Chromium context at %d cards (%s: %.1f MB free)", len(results), mem["status"], mem["free_mb"])
+                                context.close()
+                                gc.collect()
+                                if mem.get("should_abort"):
+                                    browser.close()
+                                    return results
+                                context = browser.new_context(
+                                    viewport={"width": 1280, "height": 800},
+                                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                                )
+                                page = context.new_page()
+                                page.route("**/*", block_heavy_resources)
+                                page.goto(search_url, timeout=30000)
+                                page.wait_for_selector('div[role="feed"]', timeout=12000)
+                        except Exception:
+                            pass
 
                 except Exception:
                     continue
