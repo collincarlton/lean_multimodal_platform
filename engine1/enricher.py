@@ -38,19 +38,47 @@ DB_PATH = DATA_DIR / "engine1.db"
 KEYS_PATH = HOME_DIR / ".lunora/keys.json"
 
 
-def get_api_key() -> Optional[str]:
-    """Retrieves Gemini / Google API key from environment or ~/.lunora/keys.json."""
-    key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if key:
-        return key
-    if KEYS_PATH.exists():
-        try:
-            with open(KEYS_PATH, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            return data.get("GEMINI_API_KEY") or data.get("GOOGLE_API_KEY")
-        except Exception:
-            pass
-    return None
+AISTUDIO_SCRIPTS = HOME_DIR / "AIStudioOrg" / "scripts"
+if str(AISTUDIO_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(AISTUDIO_SCRIPTS))
+
+try:
+    from lunora_core import (
+        MIN_HTTP_TIMEOUT_MS,
+        MODEL_PRIORITY,
+        TokenBucketGovernor,
+        assert_safe_device,
+        get_api_key,
+    )
+except ImportError:
+    MIN_HTTP_TIMEOUT_MS = 15000
+    MODEL_PRIORITY = [
+        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
+        "gemini-3-flash-preview",
+        "gemini-flash-lite-latest",
+        "gemini-3.8-flash",
+    ]
+    TokenBucketGovernor = None  # type: ignore
+
+    def assert_safe_device(path: Path | str) -> None:
+        p = Path(path)
+        if p.exists() and os.stat(str(p)).st_dev != HOME_DEV:
+            raise PermissionError(f"Mount barrier violated on {p}")
+
+    def get_api_key() -> Optional[str]:
+        """Retrieves Gemini / Google API key from environment or ~/.lunora/keys.json."""
+        key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        if key:
+            return key
+        if KEYS_PATH.exists():
+            try:
+                with open(KEYS_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                return data.get("GEMINI_API_KEY") or data.get("GOOGLE_API_KEY")
+            except Exception:
+                pass
+        return None
 
 
 def build_deterministic_enrichment(listing: Dict[str, Any], niche_name: str) -> Dict[str, Any]:
@@ -188,9 +216,16 @@ def call_gemini_batch(batch: List[Dict[str, Any]], niche_name: str, timeout: flo
         from google import genai
         from google.genai import types
 
+        if TokenBucketGovernor is not None:
+            acquired, wait_s, reason = TokenBucketGovernor().acquire(tokens=max(400, len(batch) * 200), wait=True, max_wait=8.0)
+            if not acquired:
+                logger.info(f"TokenBucketGovernor bypassed Gemini call ({reason}, wait={wait_s:.1f}s)")
+                return None
+
+        timeout_ms = max(int(timeout * 1000), MIN_HTTP_TIMEOUT_MS)
         client = genai.Client(
             api_key=api_key,
-            http_options=types.HttpOptions(timeout=int(timeout * 1000)),
+            http_options=types.HttpOptions(timeout=timeout_ms),
         )
 
         prompt = f"""You are an elite local SEO copywriter and schema architect for '{niche_name}'.
@@ -215,13 +250,23 @@ Input: {json.dumps(prompt_items)}"""
             temperature=0.2,
             response_mime_type="application/json",
         )
-        response = client.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=prompt,
-            config=config,
-        )
-        data = json.loads(response.text)
-        if isinstance(data, list) and len(data) == len(batch):
+        data = None
+        for model_name in MODEL_PRIORITY:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=config,
+                )
+                candidate = json.loads(response.text)
+                if isinstance(candidate, list) and len(candidate) == len(batch):
+                    data = candidate
+                    break
+            except Exception as model_exc:
+                logger.debug(f"Model {model_name} failed ({type(model_exc).__name__}); trying next priority")
+                continue
+
+        if data is not None:
             # Save to genai_cache
             try:
                 conn_sync = sqlite3.connect(str(DB_PATH))
