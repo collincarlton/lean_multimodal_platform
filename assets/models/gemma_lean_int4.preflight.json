@@ -1,0 +1,26 @@
+{
+  "id": "TFLITE-GEMMA-INT4",
+  "status": "UNCONFIGURED_FAIL_CLOSED",
+  "ready": false,
+  "purgedSyntheticStub": true,
+  "syntheticBinaryProhibited": true,
+  "preflight": {
+    "status": "UNCONFIGURED_FAIL_CLOSED",
+    "ready": false,
+    "gcsBucket": null,
+    "workerTarget": null,
+    "missingTargets": [
+      "gcs_bucket",
+      "worker_target"
+    ],
+    "syntheticBinaryProhibited": true,
+    "failClosedReason": "Missing required remote targets (gcs_bucket, worker_target); refusing synthetic .tflite generation."
+  },
+  "gcloud": {
+    "gcloudAvailable": true,
+    "gcpProject": "earnest-reactor-511010-r9",
+    "gcsBucketConfigured": false,
+    "gcsBucket": null
+  },
+  "updatedAt": "2026-11-15T15:06:31.129421+00:00"
+}

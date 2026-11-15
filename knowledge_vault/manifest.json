@@ -22,13 +22,14 @@
     },
     {
       "id": "TFLITE-GEMMA-INT4",
-      "type": "QUANTIZED_MODEL_ARTIFACT",
+      "type": "QUANTIZED_MODEL_PREFLIGHT",
       "title": "Gemma 2 2B Domain Adapted (LiteRT INT4 Quantized)",
-      "uri": "gs://cloud-vault-5tb-prod/models/gemma_lean_int4.tflite",
-      "localStaging": "assets/models/gemma_lean_int4.tflite",
+      "uri": "UNCONFIGURED",
+      "status": "UNCONFIGURED_FAIL_CLOSED",
+      "preflightManifest": "assets/models/gemma_lean_int4.preflight.json",
       "quantScheme": "dynamic_int4",
       "maxRamBudgetMb": 512,
-      "offloadPlatform": "Google Colab Pro GPU (L4/A100)"
+      "syntheticBinaryProhibited": true
     }
   ]
 }
