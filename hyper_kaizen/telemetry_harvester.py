@@ -188,6 +188,42 @@ def record_conversion_beacon(
         conn.commit()
 
 
+def check_gsc_connectivity(target_site_url: str = "https://collincarlton.github.io/lean_multimodal_platform/") -> Dict[str, Any]:
+    """Verify Google Search Console ADC auth via sites.list() and check if target_site_url is registered."""
+    try:
+        import google.auth
+        from googleapiclient.discovery import build
+
+        creds, proj = google.auth.default(scopes=["https://www.googleapis.com/auth/webmasters.readonly"])
+        svc = build("searchconsole", "v1", credentials=creds, cache_discovery=False)
+        resp = svc.sites().list().execute()
+        entries = resp.get("siteEntry", [])
+        sites = [
+            {"siteUrl": e.get("siteUrl", ""), "permissionLevel": e.get("permissionLevel", "")}
+            for e in entries
+        ]
+        norm_target = target_site_url.rstrip("/") + "/"
+        registered = any(
+            s["siteUrl"].rstrip("/") + "/" == norm_target or s["siteUrl"] == norm_target
+            for s in sites
+        )
+        return {
+            "status": "ONLINE_GSC_ADC",
+            "project": proj,
+            "site_count": len(sites),
+            "sites": sites,
+            "target_url": norm_target,
+            "target_registered": registered,
+        }
+    except Exception as exc:
+        return {
+            "status": f"ERROR_{type(exc).__name__}",
+            "error": str(exc)[:240],
+            "target_url": target_site_url,
+            "target_registered": False,
+        }
+
+
 def inspect_and_ping_dist(
     spec: NicheSpec,
     sitemap_urls: List[str],
