@@ -242,3 +242,17 @@ def inspect_and_ping_dist(
         "indexnow_key_path": str(key_path),
         "gsc": gsc_res,
     }
+
+
+if __name__ == "__main__":
+    import argparse
+    import sys
+
+    parser = argparse.ArgumentParser(description="Hyper-Kaizen Telemetry & GSC Connectivity Checker")
+    parser.add_argument("--check-gsc", action="store_true", help="Run Search Console sites.list() ADC check")
+    parser.add_argument("--site-url", default="https://collincarlton.github.io/lean_multimodal_platform/")
+    args = parser.parse_args()
+    if args.check_gsc:
+        print(json.dumps(check_gsc_connectivity(args.site_url), indent=2))
+        sys.exit(0)
+    print(json.dumps(check_gsc_connectivity(args.site_url), indent=2))

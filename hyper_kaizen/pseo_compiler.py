@@ -144,7 +144,8 @@ def _render_cards_html(listings: List[Dict[str, Any]], spec: NicheSpec, rel_pref
         rating = float(it.get("rating") or 4.7)
         reviews = int(it.get("reviews_count") or 0)
         city = it.get("city") or "Dallas"
-        phone = it.get("phone") or ""
+        raw_phone = (it.get("phone") or "").strip()
+        phone = "" if raw_phone.upper() == "N/A" or not re_sub_digits(raw_phone) else raw_phone
         summary = (it.get("summary") or "")[:175]
         tel_href = f"tel:{re_sub_digits(phone)}" if phone else "#"
         cards.append(
@@ -603,7 +604,7 @@ def compile_directory_site(
                 "addressRegion": it.get("state") or "TX",
             },
         }
-        if it.get("phone"):
+        if it.get("phone") and str(it["phone"]).strip().upper() != "N/A" and re_sub_digits(str(it["phone"])):
             lb_ld["telephone"] = it["phone"]
         if (it.get("rating") or 0) > 0 and (it.get("reviews_count") or 0) > 0:
             lb_ld["aggregateRating"] = {

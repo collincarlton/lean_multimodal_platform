@@ -11,6 +11,7 @@ from __future__ import annotations
 import asyncio
 import json
 import re
+import socket
 import ssl
 import time
 import urllib.error
@@ -111,30 +112,48 @@ class _SiteProbeParser(HTMLParser):
                 self.text_parts.append(stripped)
 
 
+def _no_website_result(pain_note: str = "Missing Website / Google Profile Leak — Zero dedicated conversion hub on Google Maps (losing high-intent emergency & AI search calls)") -> Dict[str, Any]:
+    return {
+        "status": "NO_WEBSITE",
+        "ssl": False,
+        "viewport": False,
+        "has_tel_link": False,
+        "has_form": False,
+        "has_chat": False,
+        "has_pdf_trap": False,
+        "ttfb_ms": 0.0,
+        "evidence_text": "",
+        "pain_points": [pain_note],
+        "pain_score": 65.0,
+    }
+
+
 def inspect_website_fast(url: Optional[str], timeout_sec: float = 3.0) -> Dict[str, Any]:
     """
     Lightweight technical + evidence probe with strict <=3s network timeout (mobile hotspot safe).
     Extracts Filter-Gap evidence AND broken-site friction signals for Engine 2 crossover.
     """
-    if not url or not str(url).startswith(("http://", "https://")):
-        return {
-            "status": "NO_WEBSITE",
-            "ssl": False,
-            "viewport": False,
-            "has_tel_link": False,
-            "has_form": False,
-            "has_chat": False,
-            "has_pdf_trap": False,
-            "ttfb_ms": 0.0,
-            "evidence_text": "",
-            "pain_points": ["Missing dedicated website (losing direct organic & AI search leads)"],
-            "pain_score": 65.0,
-        }
+    clean_url = (url or "").strip()
+    if (
+        not clean_url
+        or clean_url.upper() == "N/A"
+        or "google.com/search" in clean_url.lower()
+        or not clean_url.startswith(("http://", "https://"))
+    ):
+        return _no_website_result()
 
-    parsed = urllib.parse.urlparse(url)
+    parsed = urllib.parse.urlparse(clean_url)
+    host = parsed.hostname or ""
+    if not host:
+        return _no_website_result()
+    try:
+        socket.getaddrinfo(host, None)
+    except Exception:
+        return _no_website_result("Missing Website / Google Profile Leak — Listed domain does not resolve (zero active web funnel)")
+
     ssl_active = parsed.scheme == "https"
     t0 = time.perf_counter()
-    req = urllib.request.Request(url, headers=HEADERS)
+    req = urllib.request.Request(clean_url, headers=HEADERS)
     ctx = ssl.create_default_context()
     try:
         with urllib.request.urlopen(req, timeout=timeout_sec, context=ctx) as resp:
@@ -299,6 +318,7 @@ def _record_prospect_audit(row: Dict[str, Any], audit: Dict[str, Any], niche_slu
             (company_name, company_slug, website, city, niche, source_directory, audit_summary, bottlenecks_json, pain_score, icp_score, outreach_status, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'DIRECTORY_CROSSOVER_READY', ?)
             ON CONFLICT(company_slug) DO UPDATE SET
+                website = excluded.website,
                 audit_summary = excluded.audit_summary,
                 bottlenecks_json = excluded.bottlenecks_json,
                 pain_score = excluded.pain_score,

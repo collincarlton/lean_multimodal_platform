@@ -94,8 +94,8 @@ out body 25;"""
                 name = tags.get("name")
                 if not name:
                     continue
-                phone = tags.get("phone") or tags.get("contact:phone") or ""
-                website = tags.get("website") or tags.get("contact:website") or f"https://www.google.com/search?q={urllib.parse.quote(name)}"
+                phone = tags.get("phone") or tags.get("contact:phone") or "N/A"
+                website = tags.get("website") or tags.get("contact:website") or "N/A"
                 street = tags.get("addr:street", "")
                 housenumber = tags.get("addr:housenumber", "")
                 address = f"{housenumber} {street}, {metro}, TX".strip() if street else f"{metro}, TX"
@@ -250,8 +250,8 @@ def scrape_query_playwright(query: str, target_count: int, seen_names: Set[str])
 
                     record = {
                         "business_name": name,
-                        "phone": phone if phone else "(972) 746-9950",
-                        "website": website if website else f"https://www.{re.sub(r'[^a-zA-Z0-9]', '', name.lower())}.com",
+                        "phone": phone if phone else "N/A",
+                        "website": website if website else "N/A",
                         "rating": rating,
                         "reviews_count": reviews_count,
                         "address": address,

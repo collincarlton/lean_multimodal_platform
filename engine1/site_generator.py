@@ -457,7 +457,7 @@ INDEX_TEMPLATE = """<!DOCTYPE html>
             const h3 = card.querySelector('h3 a');
             const name = h3 ? h3.textContent.trim() : 'Contractor';
             const phoneLink = card.querySelector('a[href^="tel"]');
-            const phone = phoneLink ? phoneLink.textContent.replace('📞', '').trim() : '(972) 746-9950';
+            const phone = phoneLink ? phoneLink.textContent.replace('📞', '').trim() : 'N/A';
             const city = card.dataset.city || 'Dallas';
             const schemaObj = {
                 "@context": "https://schema.org",

@@ -59,8 +59,8 @@ def build_deterministic_enrichment(listing: Dict[str, Any], niche_name: str) -> 
     city = listing["city"]
     rating = listing.get("rating", 4.8)
     reviews_count = listing.get("reviews_count", 35)
-    phone = listing.get("phone", "(972) 746-9950")
-    website = listing.get("website", "https://example.com")
+    phone = listing.get("phone", "N/A")
+    website = listing.get("website", "N/A")
     address = listing.get("address", f"{city}, TX")
     zip_code = listing.get("zip_code", "75001")
 
