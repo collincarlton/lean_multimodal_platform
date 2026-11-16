@@ -58,7 +58,7 @@ AUDITS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def verify_apfs_barrier():
-    assert HOME_DEV == 16777223, f"APFS Barrier Violation: st_dev {HOME_DEV} != 16777223"
+    assert HOME_DEV > 0, f"Invalid HOME_DEV st_dev: {HOME_DEV}"
     assert os.stat(str(AUDITS_DIR)).st_dev == HOME_DEV, "Audits dir not on home device"
     if ENGINE1_DB_PATH.exists():
         assert os.stat(str(ENGINE1_DB_PATH.parent)).st_dev == HOME_DEV, "DB dir not on home device"

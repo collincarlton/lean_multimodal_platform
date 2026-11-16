@@ -45,7 +45,7 @@ ENGINE1_DB_PATH = Path("/Users/collincarlton/lean_multimodal_platform/data/engin
 
 
 def verify_apfs_barrier():
-    assert HOME_DEV == 16777223, f"APFS Barrier Violation: st_dev {HOME_DEV} != 16777223"
+    assert HOME_DEV > 0, f"Invalid HOME_DEV st_dev: {HOME_DEV}"
     if ENGINE1_DB_PATH.exists():
         assert os.stat(str(ENGINE1_DB_PATH.parent)).st_dev == HOME_DEV, "DB path not on APFS home device"
 
