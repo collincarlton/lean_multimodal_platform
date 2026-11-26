@@ -83,12 +83,27 @@ def build_job_spec(
     output_dir: Path | str,
     gcs_bucket: Optional[str] = None,
     worker_target: Optional[str] = None,
+    accelerator_profile: str = "kaggle_tpu_v5e_8",
 ) -> Dict[str, Any]:
     preflight = preflight_cloud_target(gcs_bucket=gcs_bucket, worker_target=worker_target)
     out_path = Path(output_dir)
     target_artifact = out_path / f"gemma_lean_{quant_mode}.tflite"
+    pallas_offload = {
+        "enabled": accelerator_profile in ("kaggle_tpu_v5e_8", "colab_tpu_v5e_1"),
+        "acceleratorProfile": accelerator_profile,
+        "totalHbmGb": 128 if accelerator_profile == "kaggle_tpu_v5e_8" else 16,
+        "chips": 8 if accelerator_profile == "kaggle_tpu_v5e_8" else 1,
+        "mxuBlockSpecDivisors": [8, 128],
+        "attentionKernel": "jax.experimental.pallas.ops.tpu.splash_attention",
+        "distributedPrimitive": (
+            "jax.experimental.shard_map.shard_map"
+            if accelerator_profile == "kaggle_tpu_v5e_8"
+            else "single_chip_grid_blockspec"
+        ),
+        "costUsd": 0.0,
+    }
     return {
-        "schemaVersion": "2.0.0",
+        "schemaVersion": "2.1.0",
         "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "modelId": model_id,
         "quantMode": quant_mode,
@@ -96,6 +111,7 @@ def build_job_spec(
         "expectedArtifactPath": str(target_artifact),
         "artifactPresentAndValid": not is_synthetic_tflite(target_artifact),
         "targetRuntimes": ["macOS_Desktop", "Chrome_Web"],
+        "pallasTpuOffload": pallas_offload,
         "preflight": preflight,
         "status": preflight["status"],
     }
@@ -110,6 +126,12 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--gcs-bucket", default=None, help="Explicit GCS bucket name (or LUNORA_GCS_BUCKET env)")
     parser.add_argument("--worker-target", default=None, help="Explicit remote worker URI (or LUNORA_CLOUD_WORKER_URL env)")
     parser.add_argument("--quant-mode", default="int4", choices=["int4", "int8", "fp16"], help="Quantization scheme")
+    parser.add_argument(
+        "--accelerator-profile",
+        default="kaggle_tpu_v5e_8",
+        choices=["kaggle_tpu_v5e_8", "colab_tpu_v5e_1", "vertex_custom_job"],
+        help="Remote accelerator offload profile (default: Free Kaggle TPU v5e-8 128 GB HBM + JAX Pallas)",
+    )
     parser.add_argument("--spec-only", action="store_true", help="Emit job-spec JSON cleanly without failing exit code")
     return parser.parse_args(argv)
 
@@ -126,6 +148,7 @@ def run_pipeline(argv: Optional[List[str]] = None) -> int:
         output_dir=out_dir,
         gcs_bucket=args.gcs_bucket,
         worker_target=args.worker_target,
+        accelerator_profile=args.accelerator_profile,
     )
 
     spec_file = out_dir / "gemma_job_spec.json"

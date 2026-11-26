@@ -29,6 +29,17 @@
       "preflightManifest": "assets/models/gemma_lean_int4.preflight.json",
       "quantScheme": "dynamic_int4",
       "maxRamBudgetMb": 512,
+      "offloadAccelerator": {
+        "profile": "kaggle_tpu_v5e_8",
+        "totalHbmGb": 128,
+        "chips": 8,
+        "kernelLanguage": "jax.experimental.pallas",
+        "mxuBlockSpecDivisors": [
+          8,
+          128
+        ],
+        "costUsd": 0.0
+      },
       "syntheticBinaryProhibited": true
     }
   ]

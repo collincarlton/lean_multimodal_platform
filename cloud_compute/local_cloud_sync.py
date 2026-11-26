@@ -123,6 +123,14 @@ def sync_model_metadata(
         else str(preflight_descriptor_path),
         "quantScheme": "dynamic_int4",
         "maxRamBudgetMb": 512,
+        "offloadAccelerator": {
+            "profile": "kaggle_tpu_v5e_8",
+            "totalHbmGb": 128,
+            "chips": 8,
+            "kernelLanguage": "jax.experimental.pallas",
+            "mxuBlockSpecDivisors": [8, 128],
+            "costUsd": 0.0,
+        },
         "syntheticBinaryProhibited": True,
     }
 
