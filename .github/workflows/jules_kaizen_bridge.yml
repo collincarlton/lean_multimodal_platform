@@ -1,27 +1,25 @@
-name: Jules Kaizen PR & Verification Gate
+name: Sovereign AGY Kaizen Verification Gate (DEC-07 / DEC-08)
 
 on:
   pull_request:
     branches: [ main ]
     types: [ opened, synchronize, reopened, labeled ]
-  issues:
-    types: [ labeled, opened ]
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
-  issues: write
+  contents: read
+  pull-requests: read
 
 jobs:
-  jules-verification-gate:
+  kaizen-verification-gate:
     if: >-
       github.event_name == 'workflow_dispatch' ||
+      contains(github.event.pull_request.labels.*.name, 'agent:agy') ||
       contains(github.event.pull_request.labels.*.name, 'agent:jules') ||
-      contains(github.event.issue.labels.*.name, 'agent:jules') ||
+      startsWith(github.head_ref, 'agy/') ||
       startsWith(github.head_ref, 'jules/')
 
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Code
@@ -39,53 +37,64 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install ruff pytest
 
-      - name: Python Bytecode & Ruff Format Check
+      - name: Fail-Closed Python Bytecode & Lint Check
         run: |
-          python3 -m py_compile $(git ls-files '*.py') 2>/dev/null || true
-          ruff check . --ignore E501,E402,F401,F841 || true
-
-      - name: TypeScript / JavaScript Type Check
-        run: |
-          if [ -f "package.json" ]; then
-            npm install --ignore-scripts || true
-            npx tsc --noEmit || echo "No TypeScript tsconfig or passed cleanly."
+          PY_FILES=$(git ls-files '*.py')
+          if [ -n "$PY_FILES" ]; then
+            python3 -m py_compile $PY_FILES
           fi
+          ruff check . --select E9,F63,F7,F82
 
-      - name: Enforce LUNORA Architectural & Hardware Invariants
+      - name: OWASP ASI03 Deterministic Secret Leak Scan (Fail-Closed)
         run: |
-          echo "=== Auditing Architectural Invariants ==="
-          # Check 1: Invariant C-03 - SQLite WAL & 32MB cache ceiling
-          echo "Verifying SQLite WAL pragma compliance..."
-          python3 -c "
+          python3 - <<'EOF'
+          import re, subprocess, sys
+          patterns = [
+              ("github_token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b")),
+              ("github_pat", re.compile(r"\bgithub_pat_[A-Za-z0-9_]{20,}\b")),
+              ("google_api_key", re.compile(r"\bAIzaSy[0-9A-Za-z\-_]{20,}\b")),
+              ("llm_api_key", re.compile(r"\bsk-(?:ant-|proj-|live-|test-)?[A-Za-z0-9_\-]{24,}\b")),
+              ("aws_key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+              ("private_key", re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")),
+          ]
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+          hits = []
+          for f in files:
+              try:
+                  text = open(f, "r", encoding="utf-8", errors="ignore").read()
+              except OSError:
+                  continue
+              for label, rx in patterns:
+                  if rx.search(text):
+                      hits.append(f"{f}: {label}")
+          if hits:
+              print("SECRET SCAN FAILED (OWASP ASI03):")
+              for h in hits:
+                  print(" -", h)
+              sys.exit(1)
+          print("Secret scan passed (0 hardcoded credentials detected).")
+          EOF
+
+      - name: Enforce LUNORA Architectural Invariants (Fail-Closed)
+        run: |
+          python3 - <<'EOF'
           import sqlite3, tempfile
           with tempfile.NamedTemporaryFile() as tmp:
               conn = sqlite3.connect(tmp.name)
-              conn.execute('PRAGMA journal_mode=WAL;')
-              conn.execute('PRAGMA synchronous=NORMAL;')
-              conn.execute('PRAGMA cache_size=-32000;')
-              assert conn.execute('PRAGMA journal_mode;').fetchone()[0] == 'wal'
-              assert conn.execute('PRAGMA cache_size;').fetchone()[0] == -32000
-          print('✔ Invariant C-03: SQLite WAL & 32MB Cache Ceiling verified.')
-          "
+              conn.execute("PRAGMA journal_mode=WAL;")
+              conn.execute("PRAGMA synchronous=NORMAL;")
+              conn.execute("PRAGMA cache_size=-32000;")
+              assert conn.execute("PRAGMA journal_mode;").fetchone()[0] == "wal"
+              assert conn.execute("PRAGMA cache_size;").fetchone()[0] == -32000
+          print("Invariant C-03 (SQLite WAL + 32MB cache ceiling) verified.")
+          EOF
 
-          # Check 2: Invariant C-01 - Zero Electron / Pure AppKit NSPanel (<20MB RSS)
-          echo "Verifying Zero Electron invariant..."
-          grep -rn "electron" . --exclude-dir={.git,node_modules,.worktrees} 2>/dev/null && echo "Review needed" || echo "✔ Invariant C-01: Zero Electron footprint verified."
-
-          # Check 3: Invariant C-02 - Stdio FastMCP
-          echo "✔ Invariant C-02: Stdio FastMCP verified."
-
-      - name: Run Repository Unit Tests
+      - name: Run Repository Unit Tests (Fail-Closed)
         run: |
           if [ -d "tests" ]; then
-            python3 -m unittest discover -s tests || pytest tests/ || true
+            pytest tests/ -q
           fi
 
-      - name: Auto-Merge Approved Jules PR Gate
-        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'agent:jules')
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: DEC-07 Human Merge Gate Notice
         run: |
-          echo "Jules review plan gate verified. Approving and staging PR..."
-          gh pr review ${{ github.event.pull_request.number }} --approve --body "Automated Kaizen Gate: All invariants verified (SQLite WAL, st_dev lock, zero Electron, unit tests passing)." || true
-          gh pr merge ${{ github.event.pull_request.number }} --squash --auto || true
+          echo "All fail-closed checks passed. Auto-approval and auto-merge are intentionally disabled per DEC-07 / OWASP ASI01."

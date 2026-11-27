@@ -1,29 +1,46 @@
-name: Jules Async PR Review & Gate
+name: Sovereign PR Guardrail Gate (DEC-08 Jules Action Retired)
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    types: [ opened, synchronize, reopened, ready_for_review ]
 
 concurrency:
-  group: jules-review-${{ github.event.pull_request.number }}
+  group: agy-pr-review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
-  jules_review:
-    name: Google Jules Reviewer
+  deterministic_pr_gate:
+    name: Fail-Closed Asset, Secret & Build Gate
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Execute Jules Review Action
-        uses: google/jules-action@v1
-        with:
-          jules-api-key: ${{ secrets.JULES_API_KEY }}
-          rules-file: .jules/rules.md
-          auto-merge: false
-          gate-commit: true
+      - name: Block Unquantized Assets > 50 MB (.jules/rules.md Guard)
+        run: |
+          python3 - <<'EOF'
+          import os, subprocess, sys
+          limit = 50 * 1024 * 1024
+          files = subprocess.check_output(["git", "ls-files"], text=True).splitlines()
+          oversized = [(f, os.path.getsize(f)) for f in files if os.path.isfile(f) and os.path.getsize(f) > limit]
+          if oversized:
+              print("BLOCKED: tracked file exceeds 50 MB limit:", oversized)
+              sys.exit(1)
+          print("All tracked repository files are <= 50 MB.")
+          EOF
+
+      - name: TypeScript / Genkit Backend Build Gate (if configured)
+        run: |
+          if [ -f "genkit_backend/package.json" ]; then
+            cd genkit_backend
+            npm ci --ignore-scripts
+            npm run build
+          fi
+
+      - name: DEC-07 Human Review Requirement
+        run: |
+          echo "Legacy Jules PR review action retired (DEC-08, EOL Dec 31, 2026). Human review and merge required."
